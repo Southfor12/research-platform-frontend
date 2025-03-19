@@ -1,0 +1,422 @@
+<template>
+  <div>
+    <van-list v-model="loading" :finished="finished" finished-text="没有更多了" @load="queryList">
+      <van-dropdown-menu class="select-menu">
+        <van-dropdown-item
+          @change="resetQuery"
+          v-model="queryForm.status"
+          :options="statusOptions"
+        />
+      </van-dropdown-menu>
+      <div class="top-50">
+        <van-panel
+          v-for="(item, index) in list"
+          :key="index"
+          :title="'申购人：' + item.creator_name"
+          :desc="'备注：' + (item.note ? item.note : '-')"
+          :class="getStatus(item).class"
+          :status="getStatus(item).title"
+        >
+          <div class="book-container">
+            <div class="book-item">
+              采购明细：
+              <span style="margin-right: 5px" v-for="(item1, index) in item.data" :key="index"
+                >{{ item1.name }}×{{ item1.number }}</span
+              >
+            </div>
+          </div>
+          <div v-if="item.status <= 1" slot="footer" class="book-footer">
+            <van-button
+              v-if="item.status === 0"
+              size="small"
+              type="primary"
+              @click="handleAudit(item.id, 1)"
+              >通过</van-button
+            >
+            <van-button
+              v-if="item.status === 0"
+              size="small"
+              type="danger"
+              @click="handleAudit(item.id, 3)"
+              >拒绝</van-button
+            >
+            <van-button
+              v-if="item.status === 1"
+              size="small"
+              type="primary"
+              @click="handleAudit(item.id, 2)"
+              >采购完成</van-button
+            >
+          </div>
+        </van-panel>
+      </div>
+    </van-list>
+    <van-dialog
+      v-model="auditDialogVisible"
+      title="提示"
+      show-cancel-button
+      :before-close="comfirmAudit"
+    >
+      <van-cell-group v-if="auditForm.status === 3">
+        <van-field
+          v-model="auditForm.reason"
+          label="拒绝理由"
+          type="textarea"
+          placeholder="请输入拒绝理由"
+          rows="2"
+          autosize
+        />
+      </van-cell-group>
+      <div class="tips-container" v-else>确定要通过预约吗？</div>
+    </van-dialog>
+    <el-dialog
+      title="采购完成"
+      :fullscreen="true"
+      :visible.sync="chargeDialogVisible"
+      :close-on-click-modal="false"
+    >
+      <el-form ref="form" :rules="rules" :model="completeForm" label-width="100">
+        <el-form-item label="花费金额" prop="total_amount">
+          <el-input
+            class="max-width-100"
+            @change="chargeChange"
+            type="number"
+            :min="0"
+            v-model="completeForm.total_amount"
+            size="small"
+          />
+          元
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="chargeDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="comfirmCharge('form')">确 定</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import {
+  chemicalOrderList,
+  auditChemicalOrder,
+  completeChemicalOrder,
+  cancleChemicalOrder,
+} from '@/api/stock';
+import { bookingCharge, bookingCancle } from '@/api/booking';
+import { checkNode } from '@/utils/validate';
+import { timeFormat } from '@/utils/index';
+import { mapGetters } from 'vuex';
+import { Toast, Notify, Dialog } from 'vant';
+
+export default {
+  data() {
+    return {
+      list: [],
+      loading: false,
+      finished: false,
+      auditDialogVisible: false,
+      chargeDialogVisible: false,
+      activeNames: [],
+      queryForm: {
+        page: 1,
+        size: 10,
+        sort: 'created_at',
+        sort_type: 'desc',
+        is_auth: 1,
+        type: 1,
+        status: '',
+        no: '',
+      },
+      chargeForm: {
+        id: '',
+        apparatus_boot_at: '',
+        apparatus_down_at: '',
+        append_charge: 0,
+        subtract_charge: 0,
+        date: '',
+        timeRange: [],
+      },
+      completeForm: { id: '', total_amount: '' },
+      rules: {
+        date: [
+          {
+            required: true,
+            message: '请选择实验日期',
+            trigger: 'change',
+          },
+        ],
+        timeRange: [
+          {
+            required: true,
+            message: '请选择实验起止时间',
+            trigger: 'change',
+          },
+        ],
+      },
+      pickerOptions: {
+        disabledDate(time) {
+          return (
+            new Date(timeFormat(time, 'yyyy-MM-dd hh:mm:ss').replace(/-/g, '/')).getTime() >
+            Date.now()
+          );
+        },
+      },
+      currentBooking: { discount_charge: 0 },
+      auditForm: { id: '', status: '', reason: '' },
+      statusOptions: [
+        { text: '所有状态', value: '' },
+        { text: '待审核', value: '0' },
+        { text: '采购中', value: '1' },
+        { text: '采购完成', value: '2' },
+        { text: '审核未通过', value: '3' },
+        { text: '申请人取消', value: '4' },
+      ],
+    };
+  },
+  computed: {
+    ...mapGetters(['member']),
+    getPrice() {
+      return (
+        Number(this.currentBooking.discount_charge) +
+        Number(this.chargeForm.append_charge) -
+        Number(this.chargeForm.subtract_charge)
+      );
+    },
+  },
+  methods: {
+    resetQuery(value) {
+      this.queryForm.page = 1;
+      this.queryForm.status = value;
+      this.list = [];
+      this.finished = false;
+      this.queryList();
+    },
+    queryList() {
+      this.loading = true;
+      this.queryForm.mentor_id = this.member.id;
+      chemicalOrderList(this.queryForm)
+        .then((res) => {
+          this.loading = false;
+          if (res.status === 200) {
+            res.data.data.forEach((item) => {
+              this.list.push(item);
+            });
+            if (this.list.length === res.data.total) {
+              this.finished = true;
+            } else {
+              this.queryForm.page++;
+            }
+          }
+        })
+        .catch((_) => {
+          this.loading = false;
+        });
+    },
+    handleCancleBooking(row) {
+      Dialog.confirm({
+        title: '提示',
+        message: '确定要取消预约吗？',
+      }).then(() => {
+        bookingCancle({ id: row.id }).then((res) => {
+          if (res.status === 1) {
+            this.list.forEach((item) => {
+              if (item.id === row.id) {
+                item.status = 3;
+              }
+            });
+          }
+        });
+      });
+    },
+    handleCharge(row) {
+      this.currentBooking = row;
+      this.chargeForm = {
+        id: row.id,
+        apparatus_boot_at: '',
+        apparatus_down_at: '',
+        append_charge: 0,
+        subtract_charge: 0,
+        date: '',
+        timeRange: [],
+      };
+      this.chargeForm.date = row.date;
+      if (row.type === 1) {
+        this.chargeForm.timeRange = [
+          new Date(
+            row.date + ' ' + row.start_at.substring(0, 2) + ':' + row.start_at.substring(2) + ':00',
+          ),
+          new Date(
+            row.date + ' ' + row.end_at.substring(0, 2) + ':' + row.end_at.substring(2) + ':00',
+          ),
+        ];
+      }
+      this.chargeDialogVisible = true;
+    },
+    comfirmAudit(action, done) {
+      if (action === 'cancel') {
+        done();
+        return true;
+      }
+      if (this.auditForm.status === -1 && !this.auditForm.reason) {
+        Notify({ type: 'warning', message: '请填写拒绝理由' });
+        done(false);
+        return false;
+      }
+      auditChemicalOrder(this.auditForm).then((response) => {
+        if (response.status === 1) {
+          this.list.forEach((item) => {
+            if (item.id === this.auditForm.id) {
+              item.status = this.auditForm.status;
+            }
+          });
+          done();
+        } else {
+          done(false);
+        }
+      });
+    },
+    comfirmCharge(form) {
+      this.$refs.form.validate((valid) => {
+        if (valid) {
+          bookingCharge(this.chargeForm).then((res) => {
+            if (res.status === 1) {
+              this.list.forEach((item) => {
+                if (item.id === this.currentBooking.id) {
+                  item.is_charge = 1;
+                }
+              });
+              this.chargeDialogVisible = false;
+            }
+          });
+        } else {
+          return false;
+        }
+      });
+    },
+    handleAudit(id, status) {
+      if (status === 2) {
+        this.completeForm.id = id;
+        this.completeForm.total_amount = '';
+        this.chargeDialogVisible = true;
+      } else {
+        this.auditForm.id = id;
+        this.auditForm.status = status;
+        this.auditForm.reason = '';
+        this.auditDialogVisible = true;
+      }
+    },
+    comfirmCharge(form) {
+      this.$refs.form.validate((valid) => {
+        if (valid) {
+          completeChemicalOrder(this.completeForm).then((res) => {
+            if (res.status === 1) {
+              this.list.forEach((item) => {
+                if (item.id === this.completeForm.id) {
+                  item.status = 2;
+                }
+              });
+              this.chargeDialogVisible = false;
+            }
+          });
+        } else {
+          return false;
+        }
+      });
+    },
+    appendChargeChange(value) {
+      if (!value || isNaN(value) || value < 0) {
+        this.chargeForm.append_charge = 0;
+      }
+    },
+    subtractChargeChange(value) {
+      if (!value || isNaN(value) || value < 0) {
+        this.chargeForm.subtract_charge = 0;
+      }
+    },
+    getStatus(item) {
+      var data = { title: '', class: 'check-pending' };
+      switch (item.status) {
+        case 0:
+          data.title = '待审核';
+          break;
+        case 1:
+          data.title = '采购中';
+          break;
+        case 2:
+          data.title = '采购完成';
+          data.class = 'check-pass';
+          break;
+        case 3:
+          data.title = '审核未通过';
+          data.class = 'cancle-booking';
+          break;
+        case 4:
+          data.title = '申请人取消';
+          data.class = 'cancle-booking';
+          break;
+      }
+      return data;
+    },
+    checkNode(node) {
+      return checkNode(node);
+    },
+  },
+};
+</script>
+<style lang="scss">
+.check-pending {
+  .van-panel__header-value {
+    color: #006699;
+  }
+}
+.check-pass {
+  .van-panel__header-value {
+    color: #397919;
+  }
+}
+.cancle-booking {
+  .van-panel__header-value {
+    color: #888888;
+  }
+}
+</style>
+<style lang="scss" scoped>
+.van-panel {
+  margin-bottom: 10px;
+}
+.select-menu {
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 99;
+  border-bottom: 1px solid #efefef;
+}
+.book-container {
+  padding: 0 16px;
+}
+.book-title {
+  color: #060606;
+}
+.book-item {
+  font-size: 14px;
+  margin-bottom: 8px;
+
+  span {
+    color: #666666;
+  }
+}
+.book-item:first-child {
+  margin-top: 10px;
+}
+.book-item:last-child {
+  padding-bottom: 10px;
+}
+.book-footer {
+  text-align: right;
+}
+.tips-container {
+  padding: 15px;
+  font-size: 14px;
+  color: #666;
+}
+</style>

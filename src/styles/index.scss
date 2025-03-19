@@ -1,0 +1,441 @@
+@import './variables.scss';
+@import './mixin.scss';
+@import './transition.scss';
+@import './element-ui.scss';
+@import './sidebar.scss';
+
+body {
+  height: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  // font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  font-family: "Microsoft YaHei", 微软雅黑, MicrosoftJhengHei, 华文细黑, STHeiti, MingLiu;
+}
+
+label {
+  font-weight: 700;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#app {
+  height: 100%;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+a:focus,
+a:active {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+div:focus {
+  outline: none;
+}
+
+.clearfix {
+  &:after {
+    visibility: hidden;
+    display: block;
+    font-size: 0;
+    content: " ";
+    clear: both;
+    height: 0;
+  }
+}
+
+// main-container global css
+.app-container {
+  margin-top: 35px;
+  padding: 30px;
+  min-height: calc(100vh - 200px);
+  border-radius: 5px;
+  background: #ffffff;
+
+  .filter-container {
+    padding-bottom: 10px;
+
+    .filter-item {
+      vertical-align: middle;
+      margin-bottom: 10px;
+
+      &.right {
+        float: right;
+      }
+    }
+  }
+
+  .detail-card {
+    width: 100%;
+    border: none;
+
+    .el-card__header {
+        border: none !important;
+
+        .detail-card-title {
+            display: inline-block;
+            height: 32px;
+            line-height: 32px;
+        }
+    }
+
+    .detail-card-range {
+        .el-form-item__label {
+            line-height: 32px;
+        }
+        .el-form-item__content {
+            line-height: 32px;
+        }
+    }
+}
+
+.detail-chart-card {
+    .el-card__header {
+        padding-bottom: 0px;
+    }
+}
+
+.edl-upload-card {
+  padding: 0 !important;
+  width: 180px;
+  border: none;
+  .el-card__body {
+      padding: 0 !important;
+  }
+
+  .img-uploader {
+    height: 180px;
+  }
+
+  .img-uploader .el-upload {
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+
+    .uploader-img {
+      width: 178px;
+      display: block;
+    }
+  }
+  .img-uploader .el-upload:hover {
+      border-color: #409EFF;
+  }
+  .img-uploader-icon {
+      font-size: 28px;
+      color: #8c939d;
+      width: 178px;
+      height: 178px;
+      line-height: 178px;
+      text-align: center;
+  }
+
+  .edl-icon-container {
+      text-align: center;
+
+      .edl-icon {
+          font-size: 30px;
+          cursor: pointer;
+      }
+  }
+}
+
+.edl-detail-col {
+    margin-bottom: 30px;
+
+    .edl-detail-title {
+        float: left;
+        color: rgba(0,0,0,.85);
+    }
+    .edl-detail-content {
+        float: left;
+        color: rgba(0,0,0,.65);
+    }
+}
+
+.edl-detail-col-last {
+    .edl-detail-title {
+        float: left;
+        color: rgba(0,0,0,.85);
+    }
+    .edl-detail-content {
+        float: left;
+        color: rgba(0,0,0,.65);
+    }
+}
+
+  .range-picker {
+
+    .el-form-item__content {
+      line-height: 44px;
+    }
+  }
+
+  .box-card-container {
+      margin-bottom: 66px;
+  }
+
+  .edl-common-gap {
+    height: 15px;
+  }
+
+  .box-card {
+      min-width: 230px;
+      display: inline-block;
+      margin-right: 15px;
+
+      .num {
+          font-size: 30px;
+          font-weight: 600;
+      }
+  }
+}
+
+.common-header {
+  height: 65px;
+  line-height: 65px;
+  border-bottom: 1px solid #D7D8D9;
+
+  &__logo {
+      width: 32px;
+      height: 32px;
+      vertical-align: middle;
+      margin: 0 .2rem .5rem .8rem;
+  }
+
+  &__title {
+      display: inline-block;
+      margin: 0;
+      color: #006699;
+      font-weight: 600;
+      line-height: 65px;
+      font-size: 20px;
+      font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+  }
+
+  &__login {
+      float: right;
+      height: 65px;
+      line-height: 65px;
+      margin-right: .5rem;
+  }
+}
+
+.box-card-border-none {
+
+  .box-card {
+    border: none;
+
+    .el-card__header {
+      border: none;
+    }
+  }
+}
+
+.dl-pagination
+{
+    margin-top: 30px;
+    text-align: center;
+}
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
+}
+
+.block {
+  display: block;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.max-width-50 {
+  max-width: 50px !important;
+}
+
+.max-width-80 {
+  max-width: 80px !important;
+}
+
+.max-width-100 {
+  max-width: 100px !important;
+}
+
+.width-100 {
+  width: 100px !important;
+}
+
+.max-width-150 {
+  max-width: 150px !important;
+}
+
+.width-150 {
+  width: 150px !important;
+}
+
+.max-width-200 {
+  max-width: 200px !important;
+}
+
+.width-200 {
+  width: 200px !important;
+}
+
+.max-width-250 {
+  max-width: 250px !important;
+}
+
+.width-250 {
+  width: 250px !important;
+}
+
+.max-width-300 {
+  max-width: 300px !important;
+}
+
+.width-300 {
+  width: 300px !important;
+}
+
+.max-width-400 {
+  max-width: 400px !important;
+}
+
+.width-400 {
+ width: 400px !important;
+}
+
+.max-width-500 {
+  max-width: 500px !important;
+}
+
+.width-500 {
+  width: 500px !important;
+}
+
+.width-180 {
+  width: 180px;
+}
+
+.width-50-percent {
+  width: 50%;
+}
+
+.width-80-percent {
+  width: 80%;
+}
+
+.width-100-percent {
+  width: 100%;
+}
+
+.height-100-percent {
+  height: 100%;
+}
+
+.cursor-point {
+  cursor: pointer;
+}
+
+.right-10 {
+  margin-right: 10px !important;
+}
+
+.top-10 {
+  margin-top: 10px !important;
+}
+
+.top-15 {
+  margin-top: 15px !important;
+}
+
+.top-30 {
+  margin-top: 30px !important;
+}
+
+.top-50 {
+  margin-top: 50px !important;
+}
+
+.bottom-10 {
+  margin-bottom: 10px !important;
+}
+
+.bottom-30 {
+  margin-bottom: 30px !important;
+}
+
+.tips {
+  font-size: 12px;
+  color: #888888;
+}
+
+.question-type {
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #666666;
+  font-weight: bolder;
+}
+.question-answer {
+  margin-bottom: 15px;
+}
+.question-title {
+  font-size: 14px;
+  color: #181818;
+  margin-bottom: 10px;
+}
+
+.common-icon {
+  color: #666666;
+  cursor: pointer;
+  font-size: 1.5em;
+}
+
+.common-link:hover {
+  text-decoration: underline;
+}
+
+.not-null {
+  color: #ff4949;
+  margin-right: 4px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// .el-input--small .el-input__inner {
+//   height: 32px;
+//   line-height: 32px;
+//   border: 1px solid #888888;
+// }
+
+// .el-textarea__inner {
+//   border: 1px solid #888888;
+// }
+
+// .el-range-editor--small.el-input__inner {
+//   border: 1px solid #888888;
+// }
