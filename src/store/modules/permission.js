@@ -13,6 +13,7 @@ function hasPermission(nodes, route) {
  * @param routes asyncRoutes
  * @param roles
  */
+
 export function filterAsyncRoutes(routes, nodes) {
   const res = []
   
@@ -42,12 +43,11 @@ export function filterAsyncRoutes(routes, nodes) {
 
   return res
 }
-
 const permission = {
   namespaced: true,
   state: {
-    routers: constantRoutes,
-    addRouters: []
+    routers: constantRoutes, //常规路由
+    addRouters: [] //动态路由
   },
   mutations: {
     SET_ROUTERS: (state, routers) => {

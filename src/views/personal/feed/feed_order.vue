@@ -23,7 +23,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="user_name" label="订单客户姓名" width="120" />
-            <el-table-column prop="user_organization_name" label="课程组" width="100" />
+            <el-table-column prop="user_organization_name" label="课题组" width="100" />
             <el-table-column prop="create_time" label="订单时间" width="150" />
             <el-table-column prop="source" label="动物来源" />
             <el-table-column prop="area_type" label="区域" />
@@ -33,6 +33,17 @@
             <el-table-column prop="end_time" label="结束时间" />
             <el-table-column prop="description" label="备注" />
             <el-table-column prop="status_" label="当前状态标识" />
+            <el-table-column label="操作" width="180" align="center">
+            <template #default="scope">
+                <template v-if="scope.row.status === 4">
+                <el-button type="success" size="small" @click="importAnimal(scope.row)">导入动物</el-button>
+            </template>
+            <template v-else>
+                <el-button type="primary" size="small" @click="approveOrder(scope.row)">审核</el-button>
+                <el-button type="danger" size="small" @click="cancelOrder(scope.row)">取消</el-button>
+            </template>
+            </template>
+            </el-table-column>
           </el-table>
   
           <!-- 订单详情弹窗 -->
@@ -102,8 +113,9 @@
   </template>
   
   <script>
-  import { getAllFeedOrder, get_a_FeedOrder } from '@/api/order';
-  import { get_a_Feed, get_a_Rack } from '@/api/product';
+  import { getAllFeedOrder_, get_a_FeedOrder } from '@/api/order';
+  import { get_a_Feed } from '@/api/product';
+  import { get_a_Rack } from '../../../api/colleges';
   import store from '@/store';
   
   export default {
@@ -120,7 +132,8 @@
           { title: '待付款', description: '等待付款' },
           { title: '课题组审核', description: '等待课题组审核' },
           { title: '饲养管理员审核', description: '等待饲养管理员审核' },
-          { title: '审批通过', description: '流程已完成' },
+          { title: '审批通过', description: '审批已完成' },
+          { title: '等待导入动物', description: '等待导入动物' }
         ],
         feedOrder: [],
       };
@@ -131,11 +144,12 @@
     methods: {
       async getFeedOrder() {
         try {
-          const res = await getAllFeedOrder({ user_id: store.getters.member.id });
-  
+          console.log('Fetching feed orders...');  // 确认方法被调用
+          const res = await getAllFeedOrder_({ }); // 调用接口获取所有订单
+          console.log('Raw response:', res); // 检查API返回的数据
           const promises = res.data.map(async (item) => {
             try {
-              const ress = await get_a_Feed({ id: item.care_id });
+              const ress = await get_a_Feed({ id: item.care_id }); // 调用接口获取订单的动物种类、实验室id、饲养区域类型等信息
               const totalCost = item.price * item.count + item.extra;
   
               return {
@@ -153,11 +167,13 @@
           });
   
           const data = await Promise.all(promises);
+          console.log('Processed feed orders:', data);
           this.feedOrder = data.map((item) => ({
             ...item,
             status_:
               item.status >= 0 ? this.feedSteps[item.status].title : '不通过',
           }));
+          console.log('Final feedOrder:', this.feedOrder);
         } catch (err) {
           console.error('Error fetching feed orders:', err);
           this.feedOrder = [];
@@ -181,21 +197,28 @@
   
       // 根据单元格位置动态设置类名
       getCellClassName({ row, columnIndex, column }) {
-        const colKey = this.columns[columnIndex - 1]; // 列名，从索引获取
+        console.log("你好，我是设置笼子高亮与否的方法");
+        
+        const colKey = this.columns[columnIndex - 1]||column.property; // 列名，从索引获取
         const isActive = this.activeCells.some(
           (cell) => cell.row === row.row && cell.column === colKey
         );
+        console.log(`Checking cell: Row ${row.row}, Column ${colKey}, Active: ${isActive}`);
         return isActive ? 'highlight' : 'default-cell'; // 高亮或默认样式
       },
   
       viewFeedOrderDetail(order) {
+        console.log('Viewing feed order detail:', order);
         this.activeCells = [];
         this.selectedOrder = { ...order }; // 将选中的订单复制到 selectedOrder
         this.FeedOrderDialogVisible = true; // 显示弹窗
         get_a_Rack({ id: order.rack_id }).then((res) => {
+          console.log("我被执行了");
           order.width = res.data.width;
           order.height = res.data.height;
+          console.log(order.width, order.height);
           this.generateTableData(order.height, order.width);
+          console.log(order.cage_number[0]);
           const row = this.tableData[Math.floor(order.cage_number[0] / this.columns.length)]; // 获取特定行的数据
           const column = this.columns.find(
             (col) =>
@@ -203,6 +226,7 @@
           ); // 获取特定列的名字
           let cellKey = { row: row.row, column: column };
           this.activeCells.push(cellKey); // 记录当前单元格位置
+          console.log("Active cells:", this.activeCells);
         });
         this.feedCurrentStep = 0; // 重置步骤索引
         for (let i = 0; i < this.feedSteps.length; i++) this.feedSteps[i].status = '';
@@ -231,7 +255,7 @@
   };
   </script>
   
-  <style scoped>
+  <style >
   .order-management {
     padding: 20px;
     background-color: #fff;

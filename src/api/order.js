@@ -68,6 +68,13 @@ export function getAllFeedOrder(params) {
     params
   })
 }
+
+export function getAllFeedOrder_(){
+  return request({
+    url: '/animal/ord/care/allorder',
+    method: 'get',
+  })
+}
 export function getAllTechOrder(params) {
   return request({
     url: '/animal/ord/tech/all',
