@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+// 校区
 export function addCourtyard(params) {
   return request({
     url: '/animal/fac/campus',
@@ -141,6 +142,24 @@ export function getCage(params) {
   return request({
     url: '/animal/fac/used',
     method: 'get',
+    params
+  })
+}
+
+//笼子预约之分配笼子
+export function assignCagetouser(data) {
+  return request({
+    url: '/animal/ord/cagebooking/give',
+    method: 'put',
+    data
+  })
+}
+
+//取消笼子分配
+export function delCage(params) {
+  return request({
+    url: '/animal/ord/cagebooking/cancel',
+    method: 'put',
     params
   })
 }

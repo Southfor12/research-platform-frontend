@@ -50,8 +50,6 @@ const index = {
       activeClass: 'platform'
     }
   },
-
-
   {
     path: '/buy-feed',
     name: 'personalBuyFeed',
@@ -61,6 +59,18 @@ const index = {
       title: '饲养订购',
       node: 'platform',
       tagName: 'buy_feed',
+      activeClass: 'platform'
+    }
+  },
+  {
+    path: '/buy-rack',
+    name: 'personalBuyRack',
+
+    component: () => import('@/views/index/order/buy_rack'),
+    meta: {
+      title: '笼位订购',
+      node: 'platform',
+      tagName: 'buy_rack',
       activeClass: 'platform'
     }
   },

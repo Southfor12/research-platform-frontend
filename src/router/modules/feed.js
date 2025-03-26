@@ -40,8 +40,30 @@ const feed = {
             node: 'apparatus',
             activeClass: 'apparatus'
           }
+    },
+    {
+        path : '/admin/feed/animal_strain_manage',
+        name : '品系管理',
+        component : ()=> import('@/views/admin/feed/animal_strain_manage/animal_strain_manage'),
+        meta : {
+            title : '品系管理',
+            node : 'apparatus',
+            activeClass : 'apparatus'
+        }
+    },
+    {
+        path : '/admin/feed/set_animal',
+        name : '应用设置',
+        component : ()=> import('@/views/admin/feed/set_animal'),
+        meta : {
+            title : '应用设置',
+            node : 'apparatus',
+            activeClass : 'apparatus'
+        }
     }
 
     ]
 }
+
+
 export default feed

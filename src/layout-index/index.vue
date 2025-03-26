@@ -53,6 +53,7 @@
             >
             <el-menu-item index="buy_tech" @click="menuClick('buy-tech')">技术订购 </el-menu-item>
             <el-menu-item index="buy_feed" @click="menuClick('buy-feed')">饲养订购 </el-menu-item>
+            <el-menu-item index="buy_rack" @click="menuClick('buy-rack')">笼位预约</el-menu-item>
           </el-submenu>
 
           <el-submenu index="6" :popper-append-to-body="false">
@@ -152,7 +153,7 @@
               activeName === 'buy_animal' ||
               activeName === 'buy_instrument' ||
               activeName === 'buy_tech' ||
-              activeName === 'buy_feed'
+              activeName === 'buy_feed' 
             "
           >
             <div class="clearfix box-header">
@@ -172,6 +173,9 @@
               <div class="apparatus-cate__link">
                 <span class="click-item" @click="navTo('/buy-feed')">饲养订购</span>
               </div>
+              <!-- <div class="apparatus-cate__link">
+                <sapn class="click-item" @click="navTo('/buy-rack')">笼位订购</sapn>
+              </div> -->
             </div>
           </div>
 

@@ -7,7 +7,8 @@
           <Feed_order />
         </el-tab-pane>
         <el-tab-pane label="笼位预约" name="reservation">
-          <div>这是笼位预约的内容。</div>
+          <!-- <div>这是笼位预约的内容。</div> -->
+          <Rack_order />
         </el-tab-pane>
         <el-tab-pane label="动物接受" name="acceptance">
           <div>这是动物接受的内容。</div>
@@ -21,9 +22,11 @@
   
   <script>
   import Feed_order from './feed_order.vue';
+  import Rack_order from './rack_order.vue';
   export default {
     components: {
-    Feed_order
+    Feed_order,
+    Rack_order
   },
     data() {
       return {

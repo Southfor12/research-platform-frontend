@@ -298,3 +298,13 @@ export function checkTechOrder(params) {
     data: params
   })
 }
+
+
+//笼子预约
+export function addCageOrder(params) { 
+  return request({
+    url: '/animal/ord/cagebooking/all',
+    method: 'get',
+    data: params
+  });
+}

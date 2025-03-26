@@ -1,3 +1,4 @@
+<!-- 这是饲养笼架的显示模块 -->
 <template>
     <div
       v-loading="loading"
