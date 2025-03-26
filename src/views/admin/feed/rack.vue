@@ -10,7 +10,7 @@
           <h3 class="sidebar-title">区域分类</h3>
           <el-tree
             :data="categories"
-            :default-expand-all="false"
+            :default-expand-all="true"
             node-key="id"
             @node-click="handleCategoryClick"
             class="custom-tree"

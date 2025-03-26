@@ -196,13 +196,18 @@
         <el-row gutter="20">
           <!-- 饲养服务 -->
           <el-col :span="12">
-            <el-form-item label="饲养服务" prop="service" style="margin-top: 40px">
-              <el-select v-model="submitform.service" size="medium" class="width-200">
-                <el-option value="true" label="有"></el-option>
-                <el-option value="false" label="无"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
+  <el-form-item label="饲养服务" prop="service" style="margin-top: 40px">
+    <el-select v-model="submitform.service" size="medium" class="width-200">
+      <el-option 
+        v-for="item in serviceOptions" 
+        :key="item.id" 
+        :label="item.animal_type" 
+        :value="item.animal_type">
+      </el-option>
+    </el-select>
+  </el-form-item>
+</el-col>
+
         </el-row>
         <el-row gutter="20">
           <el-col :span="12">
@@ -258,7 +263,7 @@ import { getCageused, get_a_AnimalOrder, editFeed, editAnimalOrder } from '@/api
 import { get_a_Animal } from '@/api/product';
 import store from '@/store';
 import Empty from '@/components/Empty';
-
+import {getServiceType} from '@/api/order';
 export default {
   components: {
     Empty,
@@ -282,7 +287,7 @@ export default {
       tableData: [], // 表格数据
       activeCells: [], // 选择的
       activeCells_: [], // 已选择的
-
+      serviceOptions: [], // 存储后端返回的饲养服务列表
       is_laboratory: 'true', // 是否饲养
       project_list: [
         {
@@ -292,6 +297,7 @@ export default {
         },
       ], // 项目列表
       submitform: {
+        service: '' ,// 选中的值
         animals: [
           {
             age: '',
@@ -383,12 +389,13 @@ export default {
       this.submitform.animals[0].count = this.list[0].count;
       this.submitform.animals[0].name = this.submitform.animals[0].name.split(' ')[0];
       console.log(this.submitform);
-      editFeed(this.submitform)
+      editFeed(this.submitform)//这一步给后端填充好剩余的字段
         .then((res) => {
           editAnimalOrder({
             id: this.$route.params.id,
             care_order_id: res.data,
             count: this.list[0].count,
+
           }).then(() => {
             this.$router.push('/personal/shopping/cart');
           });
@@ -440,6 +447,20 @@ export default {
     handleLaboratoryChange() {
       this.submitform.rack_id = '';
       if (this.submitform.laboratory_id) {
+        console.log(this.submitform.laboratory_id);
+        //根据选择的实验室获取饲养服务列表
+        getServiceType(this.submitform.laboratory_id).then((res) => {
+          console.log(res);
+          if (res.status === 1) {
+        this.serviceOptions = res.data; // 直接赋值给 options
+        } else {
+        this.serviceOptions = []; // 失败时清空
+        this.$message.error("获取饲养服务失败");
+      }
+
+        });
+
+
         // 根据选择的实验室更新笼架列表
         this.getRackList(this.submitform.laboratory_id);
         this.cageList = this.AllcageList.filter(

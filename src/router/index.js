@@ -6,7 +6,7 @@ Vue.use(Router)
 import Layout from '@/layout'
 
 import style_demo from './style_demo'
-import feed from './personal/feed'
+
 //admin
 import system from './modules/system'
 import research from './modules/research'
@@ -28,7 +28,7 @@ import finance from './modules/finance'
 import examine from './modules/examine'
 import scientific_examine from './modules/scientific'
 import personal_college from './modules/colleges'
-
+import feed from './modules/feed'
 import personal_product from './modules/product'
 
 //index
@@ -103,7 +103,7 @@ export const constantRoutes = [
   },
   index,
   h5,
-  feed
+  //feed
   //style_demo
 ]
 
@@ -123,6 +123,7 @@ export const asyncRoutes = [{
     }
   }]
 },
+
 
   system, //用户管理
   booking, //预约管理
@@ -145,6 +146,7 @@ export const asyncRoutes = [{
   log, //日志管理
   personal_college, //学校管理
   personal_product, //产品管理
+  feed,
 
 // 404 page must be placed at the end !!!
 {

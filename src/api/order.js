@@ -273,6 +273,16 @@ export function checkFeedOrder(params) {
   })
 }
 
+//根据实验室的id，查询所拥有的饲养服务类型
+export function getServiceType(room_id) { 
+  return request({
+    url: `/animal/pro/care/room_id/${room_id}`,
+    method: 'get'
+  });
+}
+
+
+
 export function checkItemOrder(params) {
   return request({
     url: '/animal/ord/item/audit',

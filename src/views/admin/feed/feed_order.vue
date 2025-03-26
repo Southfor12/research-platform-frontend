@@ -32,19 +32,58 @@
             <el-table-column prop="start_time" label="开始时间" />
             <el-table-column prop="end_time" label="结束时间" />
             <el-table-column prop="description" label="备注" />
-            <el-table-column prop="status_" label="当前状态标识" />
-            <el-table-column label="操作" width="180" align="center">
-            <template #default="scope">
-                <template v-if="scope.row.status === 4">
-                <el-button type="success" size="small" @click="importAnimal(scope.row)">导入动物</el-button>
-            </template>
-            <template v-else>
-                <el-button type="primary" size="small" @click="approveOrder(scope.row)">审核</el-button>
-                <el-button type="danger" size="small" @click="cancelOrder(scope.row)">取消</el-button>
-            </template>
-            </template>
+            <!-- <el-table-column prop="status_" label="当前状态标识" /> -->
+            <el-table-column prop="status_" label="当前状态标识">
+                <template #default="scope">
+                <el-tag :type="getStatusTagType(scope.row.status)">
+                {{ scope.row.status_ }}
+                </el-tag>
+                </template>
             </el-table-column>
+            <el-table-column label="操作" width="180" align="center">
+              <template #default="scope">
+                  <template v-if="scope.row.status === 3">
+                    <el-button type="success" size="small" @click="importAnimal(scope.row)">导入动物</el-button>
+                  </template>
+                  <template v-else-if="scope.row.status === 0">
+                    <span style="color: red;">该订单尚未完成支付</span>
+                  </template>
+                  <template v-else-if="scope.row.status <0">
+                    <el-button type="info" size="small" @click="approveOrder(scope.row)">取消</el-button>
+                  </template>
+                  <template v-else>
+                    <el-button type="primary" size="small" @click="approveOrder(scope.row)">审核</el-button>
+                    <el-button type="danger" size="small" @click="cancelOrder(scope.row)">取消</el-button>
+                  </template>
+              </template>
+
+            </el-table-column>
+
           </el-table>
+
+          
+          <!-- 审核弹窗 -->
+  <el-dialog title="审核订单" :visible.sync="dialogVisible" width="400px">
+    <el-form label-width="80px">
+      <el-form-item label="审核结果">
+        <el-select v-model="auditResult" placeholder="请选择">
+          <el-option label="审核通过" :value="true"></el-option>
+          <el-option label="审核不通过" :value="false"></el-option>
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="描述">
+        <el-input v-model="description" type="textarea"></el-input>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <span>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitApproval">提交</el-button>
+      </span>
+    </template>
+  </el-dialog>
   
           <!-- 订单详情弹窗 -->
           <el-dialog
@@ -116,12 +155,17 @@
   import { getAllFeedOrder_, get_a_FeedOrder } from '@/api/order';
   import { get_a_Feed } from '@/api/product';
   import { get_a_Rack } from '../../../api/colleges';
+  import { checkFeedOrder } from '../../../api/order';
   import store from '@/store';
   
   export default {
     name: 'FeedOrder',
     data() {
       return {
+        dialogVisible: false,//控制审核弹窗的显示状态
+        auditResult: null, // 存储审核结果
+        description: '', // 备注信息
+        currentRow: null, // 记录当前审核的订单
         tableData: [], // 表格数据
         columns: [], // 表格列
         activeCells: [],
@@ -130,10 +174,10 @@
         feedCurrentStep: 0, // 当前步骤索引
         feedSteps: [
           { title: '待付款', description: '等待付款' },
-          { title: '课题组审核', description: '等待课题组审核' },
-          { title: '饲养管理员审核', description: '等待饲养管理员审核' },
-          { title: '审批通过', description: '审批已完成' },
-          { title: '等待导入动物', description: '等待导入动物' }
+          { title: '待课题组审核', description: '等待课题组审核' },
+          { title: '待饲养管理员审核', description: '等待饲养管理员审核' },
+          { title: '等待导入动物', description: '审批已完成' },
+          //{ title: '等待导入动物', description: '等待导入动物' }
         ],
         feedOrder: [],
       };
@@ -142,6 +186,20 @@
       this.getFeedOrder();
     },
     methods: {
+      getStatusTagType(status) {
+    switch (status) {
+      case 0:
+        return 'danger'; // 未支付
+      case 1:
+        return 'warning'; // 课题组审核中
+      case 2:
+        return 'primary'; // 饲养管理员审核中
+      case 3:
+        return 'info'; // 等待导入动物
+      default:
+        return ''; // 默认
+    }
+  },
       async getFeedOrder() {
         try {
           console.log('Fetching feed orders...');  // 确认方法被调用
@@ -171,7 +229,7 @@
           this.feedOrder = data.map((item) => ({
             ...item,
             status_:
-              item.status >= 0 ? this.feedSteps[item.status].title : '不通过',
+              item.status >= 0 ? this.feedSteps[item.status].title : '审核不通过',
           }));
           console.log('Final feedOrder:', this.feedOrder);
         } catch (err) {
@@ -251,6 +309,46 @@
           this.feedSteps[-order.status - 1].status = 'error';
         }
       },
+
+      // 点击“审核”按钮，打开弹窗
+  approveOrder(row) {
+    console.log('审核订单:', row);
+    this.currentRow = row; // 记录当前审核的行数据
+    this.auditResult = null; // 清空审核结果
+    this.description = ''; // 清空备注
+    this.dialogVisible = true; // 打开弹窗
+    console.log('审核弹窗状态:', this.dialogVisible);
+
+  },
+
+  // 提交审核
+  submitApproval() {
+    if (this.auditResult === null) {
+      this.$message.warning("请选择审核结果！");
+      return;
+    }
+
+    const newStatus = this.auditResult ? this.currentRow.status+1 : -this.currentRow.status;
+    const params = {
+      id: this.currentRow.id,//訂單id
+      status: newStatus,
+      info: this.auditResult ? this.description : '',
+    };
+
+    //发送请求到后端
+    checkFeedOrder(params).then((res) => {
+      console.log('审核请求成功:', res);
+      this.$message.success("审核提交成功");
+      this.dialogVisible = false;
+      this.getFeedOrder(); // 重新拉取订单数据，确保 UI 更新
+    })
+    .catch((err) => {
+      console.error("审核请求失败:", err);
+      this.$message.error("审核提交失败，请稍后重试！");
+    });
+    
+  }
+
     },
   };
   </script>

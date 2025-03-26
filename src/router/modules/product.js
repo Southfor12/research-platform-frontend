@@ -7,7 +7,8 @@ const product = {
         name: 'adminProduct',
         meta: {
                 title: '产品管理',
-                icon: 'product',
+                //icon: 'product',
+                icon: 'security',
                 node: 'platform',
                 activeClass: 'platform'
         },
