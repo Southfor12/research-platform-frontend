@@ -3,24 +3,14 @@
     <!-- 操作工具栏 -->
     <div class="operation-bar">
       <el-button type="primary" icon="el-icon-plus" @click="handleCreate">新增</el-button>
-      <el-input
-        v-model="searchKey"
-        placeholder="请输入品系名称"
-        style="width: 200px; margin-left: 20px"
-        @keyup.enter="handleSearch"
-      >
+      <el-input v-model="searchKey" placeholder="请输入品系名称" style="width: 200px; margin-left: 20px"
+        @keyup.enter="handleSearch">
         <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
       </el-input>
     </div>
 
     <!-- 数据表格 -->
-    <el-table
-      :data="tableData"
-      border
-      v-loading="loading"
-      style="width: 100%"
-      class="quality-table"
-    >
+    <el-table :data="tableData" border v-loading="loading" style="width: 100%" class="quality-table">
       <el-table-column prop="id" label="品系ID" width="120" align="center" />
       <el-table-column prop="strain_name" label="品系全称" width="180" align="center" />
       <el-table-column prop="strain_abbreviation" label="品系简称" width="120" align="center" />
@@ -37,22 +27,12 @@
     </el-table>
 
     <!-- 分页 -->
-    <el-pagination
-      background
-      :current-page="pagination.current"
-      :page-size="pagination.size"
-      :total="pagination.total"
-      layout="total, prev, pager, next, jumper"
-      @current-change="handlePageChange"
-      style="margin-top: 20px"
-    ></el-pagination>
+    <el-pagination background :current-page="pagination.current" :page-size="pagination.size" :total="pagination.total"
+      layout="total, prev, pager, next, jumper" @current-change="handlePageChange"
+      style="margin-top: 20px"></el-pagination>
 
     <!-- 编辑对话框 -->
-    <el-dialog
-      :title="dialogType === 'create' ? '新增品系' : '编辑品系'"
-      :visible.sync="dialogVisible"
-      width="600px"
-    >
+    <el-dialog :title="dialogType === 'create' ? '新增品系' : '编辑品系'" :visible.sync="dialogVisible" width="600px">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
         <el-form-item label="品系全称" prop="strain_name">
           <el-input v-model="form.strain_name"></el-input>
@@ -83,7 +63,8 @@ import {
   getAnimalStrain,
   addAnimalStrain,
   editAnimalStrain,
-  delAnimalStrain
+  delAnimalStrain,
+  getAnimalTypeByStrainId
 } from '@/api/ani_setting'
 
 export default {
@@ -130,9 +111,31 @@ export default {
 
         const res = await getAnimalStrain(params)
         if (res.status === 1) {
-          this.tableData = res.data.records
-          this.pagination.total = res.data.total
-          this.pagination.size = res.data.size
+          // this.tableData = res.data.records
+          // this.pagination.total = res.data.total
+          // this.pagination.size = res.data.size
+          const records = res.data.records
+          //为每个品系获取动物类型
+          const updateRecords = await Promise.all(
+            records.map(async (item) => {
+              try {
+                const typeRes = await getAnimalTypeByStrainId({ id: item.id });
+                return {
+                  ...item,
+                  animal_type: typeRes.msg,// 使用接口返回的msg作为动物类型
+                };
+              } catch (error) {
+                console.error('获取动物类型失败:', error);
+                return {
+                  ...item,
+                  animal_type: '未知' // 错误时显示默认值
+                };
+              }
+            })
+          );
+          this.tableData = updateRecords;
+          this.pagination.total = res.data.total;
+          this.pagination.size = res.data.size;
         }
       } catch (error) {
         console.error('数据加载失败:', error)
@@ -194,7 +197,7 @@ export default {
         await delAnimalStrain({ id: row.id })
         this.$message.success('删除成功')
         this.loadData()
-      }).catch(() => {})
+      }).catch(() => { })
     },
 
     handleSearch() {

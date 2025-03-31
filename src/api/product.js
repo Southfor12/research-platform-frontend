@@ -82,10 +82,6 @@ export function editItem(params) {
         })
 }
 
-
-
-
-
 //饲养
 export function addFeed(params) {
         return request({
@@ -108,7 +104,6 @@ export function get_a_Feed(params) {
 
         })
 }
-
 export function delFeed(params) {
         return request({
                 url: '/animal/pro/care',

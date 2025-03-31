@@ -217,6 +217,7 @@
               <el-table-column prop="level" label="动物级别" />
               <el-table-column prop="start_time" label="开始时间" />
               <el-table-column prop="end_time" label="结束时间" />
+              <el-table-column prop="price" label="总额" />
               <el-table-column prop="description" label="备注" />
               <el-table-column prop="status_" label="当前状态标识" />
             </el-table>

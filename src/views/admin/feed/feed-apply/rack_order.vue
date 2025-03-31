@@ -112,7 +112,7 @@ import { addCageOrder } from '@/api/order';
 import { getCourtyard, getTenement, getLaboratory, getRack, getCage } from '@/api/colleges';
 import Empty from '@/components/Empty';
 import { getCageused } from '@/api/order';
-import { assignCagetouser, delCage } from '../../../api/colleges';
+import { assignCagetouser, delCage } from '@/api/colleges';
 export default {
     name: 'CageOrder',
     components: {

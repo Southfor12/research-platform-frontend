@@ -14,7 +14,7 @@ const feed = {
     children:[{
         path: '/admin/feed/feed_apply',
         name:'饲养申请',
-        component: () => import('@/views/admin/feed/apply'),
+        component: () => import('@/views/admin/feed/feed-apply/apply'),
         meta: {
             title: '饲养申请',
             node: 'apparatus',
@@ -24,7 +24,7 @@ const feed = {
     {
         path: '/admin/feed/feed_rack',
         name:'饲养笼架',
-        component: () => import('@/views/admin/feed/rack'),
+        component: () => import('@/views/admin/feed/feed-rack/rack'),
         meta: {
             title: '饲养笼架',
             node: 'apparatus',
@@ -32,9 +32,9 @@ const feed = {
           }
     },,
     {
-        path: '/admin/feed/import_anmial',
+        path: '/admin/feed/import_animal',
         name:'动物导入',
-        component: () => import('@/views/admin/feed/import_anmial'),
+        component: () => import('@/views/admin/feed/import_animal'),
         meta: {
             title: '动物导入',
             node: 'apparatus',
@@ -54,7 +54,7 @@ const feed = {
     {
         path : '/admin/feed/set_animal',
         name : '应用设置',
-        component : ()=> import('@/views/admin/feed/set_animal'),
+        component : ()=> import('@/views/admin/feed/ani-setting/set_animal'),
         meta : {
             title : '应用设置',
             node : 'apparatus',

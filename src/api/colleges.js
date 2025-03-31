@@ -146,6 +146,15 @@ export function getCage(params) {
   })
 }
 
+//查询所有笼子信息
+export function getCageAll(params) {
+  return request({
+    url: '/animal/fac/cage/rack',
+    method: 'get',
+    params
+  })
+}
+
 //笼子预约之分配笼子
 export function assignCagetouser(data) {
   return request({

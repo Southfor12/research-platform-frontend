@@ -1,13 +1,11 @@
+<!-- 这个是饲养繁育的饲养申请模块 -->
 <template>
     <div class="tabs-container">
       <el-tabs v-model="activeTab" @tab-click="handleTabClick">
         <el-tab-pane label="饲养订单" name="order">
-          <!-- 引入饲养订单组件 -->
-          <!-- <FeedingOrder /> -->
           <Feed_order />
         </el-tab-pane>
         <el-tab-pane label="笼位预约" name="reservation">
-          <!-- <div>这是笼位预约的内容。</div> -->
           <Rack_order />
         </el-tab-pane>
         <el-tab-pane label="动物接受" name="acceptance">

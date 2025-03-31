@@ -1,10 +1,6 @@
 <template>
-  <div
-    v-loading="loading"
-    class="app-container"
-    element-loading-text="数据处理中..."
-    element-loading-spinner="el-icon-loading"
-  >
+  <div v-loading="loading" class="app-container" element-loading-text="数据处理中..."
+    element-loading-spinner="el-icon-loading">
     <el-form ref="form" :model="form" :rules="rules" label-width="150px">
       <el-row>
         <el-col :span="12">
@@ -16,18 +12,9 @@
         <!-- 院区 -->
         <el-col :span="12">
           <el-form-item label="院区" prop="campus_name">
-            <el-select
-              size="big"
-              class="width-200"
-              @change="handleCampusChange"
-              v-model="form.campus_name"
-            >
-              <el-option
-                v-for="item in this.campusList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.name"
-              ></el-option>
+            <el-select size="big" class="width-200" @change="handleCampusChange" v-model="form.campus_name">
+              <el-option v-for="item in this.campusList" :key="item.id" :label="item.name"
+                :value="item.name"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -35,18 +22,9 @@
         <!-- 楼栋 -->
         <el-col :span="12">
           <el-form-item label="楼栋" prop="tenement">
-            <el-select
-              size="big"
-              class="width-200"
-              @change="handleBuildingChange"
-              v-model="form.building_id"
-            >
-              <el-option
-                v-for="item in this.tenementList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
+            <el-select size="big" class="width-200" @change="handleBuildingChange" v-model="form.building_id">
+              <el-option v-for="item in this.tenementList" :key="item.id" :label="item.name"
+                :value="item.id"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -54,18 +32,9 @@
         <!-- 实验室 -->
         <el-col :span="12">
           <el-form-item label="实验室" prop="room_id">
-            <el-select
-              v-model="form.room_id"
-              size="big"
-              class="width-200"
-              @change="handleLaboratoryChange"
-            >
-              <el-option
-                v-for="item in this.laboratoryList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
+            <el-select v-model="form.room_id" size="big" class="width-200" @change="handleLaboratoryChange">
+              <el-option v-for="item in this.laboratoryList" :key="item.id" :label="item.name"
+                :value="item.id"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -87,13 +56,8 @@
 
         <el-col :span="12">
           <el-form-item label="统计日期" prop="stats_date">
-            <el-date-picker
-              v-model="form.stats_date"
-              size="big"
-              type="date"
-              value-format="yyyy-MM-dd"
-              placeholder="选择日期"
-            >
+            <el-date-picker v-model="form.stats_date" size="big" type="date" value-format="yyyy-MM-dd"
+              placeholder="选择日期">
             </el-date-picker>
           </el-form-item>
         </el-col>
@@ -109,7 +73,17 @@
             <el-input v-model="form.manager_mobile" size="big" class="width-200" />
           </el-form-item>
         </el-col>
+
+        <el-col :span="12">
+          <el-form-item label="价格" prop="price">
+            <el-input v-model.number="form.price" size="big" class="width-200" type="number" placeholder="请输入价格">
+              <template slot="append">元/天</template>
+            </el-input>
+          </el-form-item>
+        </el-col>
       </el-row>
+
+
 
       <el-form-item>
         <el-button type="primary" size="small" @click="submit('form')">保 存</el-button>
@@ -117,7 +91,10 @@
     </el-form>
   </div>
 </template>
-            <script>
+
+
+
+<script>
 import { addFeed, editFeed, get_a_Feed } from '@/api/product';
 import { getCourtyard, getTenement, getLaboratory } from '@/api/colleges';
 import Tinymce from '@/components/Tinymce';
@@ -150,16 +127,31 @@ export default {
         manager: '',
         animal_type: '',
         stats_date: '',
+        price: '',
       },
 
       rules: {
-        // name: [
-        //   {
-        //     required: true,
-        //     message: '请输入名称',
-        //     trigger: 'blur',
-        //   },
-        // ],
+        rules: {
+          // 其他原有规则...
+          price: [
+            { required: true, message: '价格不能为空', trigger: 'blur' },
+            {
+              type: 'number',
+              message: '必须输入数字值',
+              trigger: ['blur', 'change']
+            },
+            {
+              validator: (rule, value, callback) => {
+                if (value < 0) {
+                  callback(new Error('价格不能为负数'));
+                } else {
+                  callback();
+                }
+              },
+              trigger: ['blur', 'change']
+            }
+          ]
+        }
       },
     };
   },
@@ -226,7 +218,6 @@ export default {
       }
     },
     submit(form) {
-      //       console.log(this.form.number);
       if (this.$route.params.id) {
         editFeed(this.form)
           .then((response) => {
@@ -286,7 +277,7 @@ export default {
             this.tenementList = res.data.content;
             resolve();
           })
-          .catch(() => {});
+          .catch(() => { });
       });
     },
 
@@ -323,4 +314,3 @@ export default {
   },
 };
 </script>
-            

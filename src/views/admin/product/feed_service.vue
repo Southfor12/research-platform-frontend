@@ -14,10 +14,6 @@
         </el-select>
       </el-form-item>
 
-      <!-- <el-form-item label="楼层">
-        <el-input v-model="queryForm.floor_number" class="max-width-150" size="small" clearable />
-      </el-form-item> -->
-
       <el-form-item label="动物类型">
         <el-input v-model="queryForm.animal_type" class="max-width-150" size="small" clearable />
       </el-form-item>
@@ -35,10 +31,10 @@
       <el-table-column width="100px" type="index" :index="indexMethod" label="序号" />
       <el-table-column prop="number" label="编号" />
       <el-table-column prop="area_type" label="区域" />
-      <!-- <el-table-column prop="floor_number" label="楼层" /> -->
       <el-table-column prop="room_name" label="房间" />
       <el-table-column prop="animal_type" label="动物类型" />
       <el-table-column prop="rest" label="总可用笼位" />
+      <el-table-column prop="price" label="价格/天" />
       <el-table-column prop="stats_date" label="统计日期" />
 
       <el-table-column width="180" label="操作">
@@ -78,7 +74,8 @@
     />
   </div>
 </template>
-            <script>
+
+<script>
 import { getFeed, delFeed } from '@/api/product';
 import Empty from '@/components/Empty';
 
@@ -93,9 +90,6 @@ export default {
       queryForm: {
         page: 1,
         page_size: 10,
-        // sort: 'created_at',
-        // sort_type: 'desc',
-        // platform_id: '',
         id: '',
         number: '',
         area_type: '', //区域
@@ -106,6 +100,7 @@ export default {
         rest: '',
         is_deleted: false,
         no_deleted: false,
+        price: '',  
       },
       list: [],
       total: 0,

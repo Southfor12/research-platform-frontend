@@ -9,6 +9,15 @@ export function getAnimalType(params) {
   })
 }
 
+//根据id查询动物类型
+export function getAnimalTypeById(params) {
+  return request({
+    url: '/animal/set/animaltype/' + params.id,
+    method: 'get',
+    params
+  })
+}
+
 //新建动物类型
 export function addAnimalType(params) {
   return request({
@@ -262,7 +271,14 @@ export function delAnimalStrain(params) {
   })
 }
 
-
+//根据动物品系id查询动物的类型
+export function getAnimalTypeByStrainId(params) {
+  return request({
+    url: '/animal/care/animalstrain/getanimaltype',
+    method: 'get',
+    params
+  })
+}
 
 
 
