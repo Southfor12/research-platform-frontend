@@ -172,3 +172,12 @@ export function delCage(params) {
     params
   })
 }
+
+// 移动笼盒
+export function moveCage(data) {
+  return request({
+    url: '/animal/ord/cage/move',
+    method: 'put',
+    data
+  })
+}
