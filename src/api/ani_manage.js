@@ -26,3 +26,29 @@ export function cleanRack(params) {
         params
     })
 }
+
+//更改笼架联系人
+export function updateCageContact(params) {
+    return request({
+        url: '/animal/fac/cage/changeuser',
+        method: 'put',
+        params
+    })
+}
+
+//查询所有用户
+export function allUsers() {
+    return request({
+      url: '/user/all',
+      method: 'get'
+    })
+}
+
+//根据用户id查询用户
+export function getUserById(params) {
+    return request({
+        url: '/user/get',
+        method: 'get',
+        params
+    })
+}

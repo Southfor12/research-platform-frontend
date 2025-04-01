@@ -73,7 +73,7 @@
             <el-button type="primary" size="small" icon="el-icon-document">订单信息</el-button>
             <el-button type="primary" size="small" icon="el-icon-search">清空订单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印标签</el-button>
-            <el-button type="primary" size="small" icon="el-icon-user">变更联系人</el-button>
+            <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact">变更联系人</el-button>
             <el-button type="primary" size="small" icon="el-icon-warning">饲养异常</el-button>
             <el-button type="primary" size="small" icon="el-icon-setting">提交工单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">重打标签</el-button>
@@ -113,15 +113,50 @@
                 <span>笼子空，但已被占用</span>
               </div>
               <div class="legend-item">
-                <div class="color-block reserved-cell"></div>
-                <span>笼子已预留</span>
-              </div>
-              <div class="legend-item">
                 <div class="color-block default-cell"></div>
                 <span>未使用</span>
               </div>
             </div>
           </div>
+
+          <!-- 变更联系人弹窗 -->
+          <el-dialog
+            title="变更联系人"
+            :visible.sync="contactDialogVisible"
+            width="500px"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            :show-close="false">
+            <div class="contact-dialog-content">
+              <div class="current-contact">
+                <span class="label">当前联系人：</span>
+                <span class="value">{{ currentContactName }}</span>
+              </div>
+              <div class="new-contact">
+                <span class="label">选择新联系人：</span>
+                <el-select
+                  v-model="selectedContactId"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="请输入联系人姓名搜索"
+                  :remote-method="remoteSearch"
+                  :loading="loading"
+                  style="width: 100%">
+                  <el-option
+                    v-for="item in contactOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id">
+                  </el-option>
+                </el-select>
+              </div>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="contactDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="confirmChangeContact">确 定</el-button>
+            </div>
+          </el-dialog>
         </div>
       </el-main>
     </el-container>
@@ -132,7 +167,7 @@
 import { getCourtyard, getTenement, getLaboratory, getRack, getCage, getCageAll } from '@/api/colleges';
 import Empty from '@/components/Empty';
 import { getCageused } from '@/api/order';
-import { getCageId, cleanRack } from '@/api/ani_manage';
+import { getCageId, cleanRack, updateCageContact ,getUserById, allUsers } from '@/api/ani_manage';
 
 export default {
   components: {
@@ -198,6 +233,13 @@ export default {
       currentCageId: null, // 当前选中笼子的ID
       cleanedCages: [], // 已清理的笼子列表
       showLegend: true, // 控制色卡提示区域的显示/隐藏
+
+      // 变更联系人相关数据
+      contactDialogVisible: false,
+      currentContactName: '',
+      currentContactId: null,
+      selectedContactId: null,
+      contactOptions: [],
     };
   },
   created() {
@@ -565,6 +607,95 @@ export default {
     toggleLegend() {
       this.showLegend = !this.showLegend;
     },
+
+    // 处理变更联系人按钮点击
+    async handleChangeContact() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要变更联系人的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        // 获取当前笼子的所有者信息
+        const cageInfo = this.cageInfoList.find(cage => cage.id === this.currentCageId);
+        if (!cageInfo || !cageInfo.user_id) {
+          this.$message.warning('未找到笼子所有者信息');
+          return;
+        }
+
+        // 获取当前联系人信息
+        const userRes = await getUserById({ id: cageInfo.user_id });
+        if (userRes.status === 200 && userRes.data) {
+          this.currentContactName = userRes.data.name;
+          this.currentContactId = userRes.data.id;
+        } else {
+          this.$message.warning('获取当前联系人信息失败');
+          return;
+        }
+
+        // 获取所有可用联系人
+        const allUsersRes = await allUsers();
+        if (allUsersRes.status === 200 && allUsersRes.data.users) {
+          this.contactOptions = allUsersRes.data.users;
+        } else {
+          this.$message.warning('获取联系人列表失败');
+          return;
+        }
+
+        // 显示弹窗
+        this.contactDialogVisible = true;
+      } catch (error) {
+        console.error('获取联系人信息失败:', error);
+        this.$message.error('获取联系人信息失败');
+      }
+    },
+
+    // 远程搜索联系人
+    remoteSearch(query) {
+      if (query !== '') {
+        this.loading = true;
+        // 这里可以添加远程搜索逻辑，目前使用本地过滤
+        setTimeout(() => {
+          this.loading = false;
+          this.contactOptions = this.contactOptions.filter(item => {
+            return item.name.toLowerCase().includes(query.toLowerCase());
+          });
+        }, 200);
+      } else {
+        this.contactOptions = this.contactOptions;
+      }
+    },
+
+    // 确认变更联系人
+    async confirmChangeContact() {
+      if (!this.selectedContactId) {
+        this.$message.warning('请选择新联系人');
+        return;
+      }
+
+      try {
+        await updateCageContact({
+          cage_id: this.currentCageId,
+          user_id: this.selectedContactId
+        });
+        
+        this.$message.success('变更联系人成功');
+        this.contactDialogVisible = false;
+        
+        // 刷新笼架数据
+        if (this.selectedRack && this.selectedRack.id) {
+          await this.getCageUsed_(this.selectedRack.id);
+        }
+      } catch (error) {
+        console.error('变更联系人失败:', error);
+        this.$message.error('变更联系人失败');
+      }
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -712,34 +843,21 @@ export default {
   animation: flash 1s infinite !important;
 }
 
-/* 已清理笼子的样式 */
-.cleaned-cell {
+/* 已清理或预留的笼子样式 */
+.cleaned-cell, .reserved-cell {
   background-color: #409EFF !important;
   color: white !important;
 }
 
-/* 确保已清理状态的优先级高于hover效果 */
-.el-table tbody tr:hover>td.cleaned-cell {
-  background-color: #409EFF !important;
-}
-
-.el-table td.cleaned-cell {
-  background-color: #409EFF !important;
-}
-
-/* 已预留笼子的样式 */
-.reserved-cell {
-  background-color: #67C23A !important;
-  color: white !important;
-}
-
-/* 确保已预留状态的优先级高于hover效果 */
+/* 确保已清理或预留状态的优先级高于hover效果 */
+.el-table tbody tr:hover>td.cleaned-cell,
 .el-table tbody tr:hover>td.reserved-cell {
-  background-color: #67C23A !important;
+  background-color: #409EFF !important;
 }
 
+.el-table td.cleaned-cell,
 .el-table td.reserved-cell {
-  background-color: #67C23A !important;
+  background-color: #409EFF !important;
 }
 
 /* 色卡提示区域样式 */
@@ -824,5 +942,30 @@ export default {
 .color-block.current-selected-cell {
   background-color: #ff4444;
   animation: flash 1s infinite;
+}
+
+/* 变更联系人弹窗样式 */
+.contact-dialog-content {
+  padding: 20px;
+}
+
+.current-contact {
+  margin-bottom: 20px;
+}
+
+.current-contact .label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.new-contact .label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.dialog-footer {
+  text-align: right;
+  padding-top: 20px;
 }
 </style>
