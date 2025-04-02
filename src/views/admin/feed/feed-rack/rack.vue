@@ -1,21 +1,45 @@
 <!-- 这是饲养笼架的显示模块 -->
 <template>
-  <div v-loading="loading" class="app-container" element-loading-text="数据查询中..."
-    element-loading-spinner="el-icon-loading">
+  <div
+    v-loading="loading"
+    class="app-container"
+    element-loading-text="数据查询中..."
+    element-loading-spinner="el-icon-loading"
+  >
     <el-container>
       <el-aside width="240px" class="sidebar">
         <h3 class="sidebar-title">区域分类</h3>
-        <el-tree :data="categories" :default-expand-all="true" node-key="id" @node-click="handleCategoryClick"
-          class="custom-tree" :render-content="renderTreeNode" />
+        <el-tree
+          :data="categories"
+          :default-expand-all="true"
+          node-key="id"
+          @node-click="handleCategoryClick"
+          class="custom-tree"
+          :render-content="renderTreeNode"
+        />
       </el-aside>
       <el-main>
         <!-- 只有在选中第三级节点时显示按钮 -->
-        <el-button v-if="showAddButton" class="right" type="primary" size="small" icon="el-icon-plus"
-          :min-width="minWidth" :min-height="minHeight" @click="toAdd(selectedLaboratory.id)">
+        <el-button
+          v-if="showAddButton"
+          class="right"
+          type="primary"
+          size="small"
+          icon="el-icon-plus"
+          :min-width="minWidth"
+          :min-height="minHeight"
+          @click="toAdd(selectedLaboratory.id)"
+        >
           添加笼架
         </el-button>
-        <el-button v-if="showEditButton" class="right" type="primary" size="small" icon="el-icon-plus"
-          @click="toEdit()">
+        <el-button
+          v-if="showEditButton"
+          class="right"
+          type="primary"
+          size="small"
+          icon="el-icon-plus"
+          @click="toEdit()"
+        >
           修改笼架
         </el-button>
 
@@ -58,22 +82,38 @@
           </el-row>
 
           <!-- 表格 -->
-          <el-table :data="tableData" style="width: 100%; padding-left: 80px; margin-bottom: 20px;"
-            :cell-class-name="getCellClassName" @cell-click="handleCellClick">
+          <el-table
+            :data="tableData"
+            style="width: 100%; padding-left: 80px; margin-bottom: 20px"
+            :cell-class-name="getCellClassName"
+            @cell-click="handleCellClick"
+          >
             <el-table-column prop="row" label="#" width="50"></el-table-column>
-            <el-table-column v-for="col in columns" :key="col" :prop="col" :label="col" width="100"></el-table-column>
+            <el-table-column
+              v-for="col in columns"
+              :key="col"
+              :prop="col"
+              :label="col"
+              width="100"
+            ></el-table-column>
           </el-table>
 
           <!-- 功能按钮组 - 第一行 -->
           <div class="button-group">
-            <el-button type="primary" size="small" icon="el-icon-delete" @click="handleCleanRack">清理笼盒</el-button>
+            <el-button type="primary" size="small" icon="el-icon-delete" @click="handleCleanRack"
+              >清理笼盒</el-button
+            >
             <el-button type="primary" size="small" icon="el-icon-edit">编辑笼盒</el-button>
-            <el-button type="primary" size="small" icon="el-icon-plus">移动笼盒</el-button>
+            <el-button type="primary" size="small" icon="el-icon-plus" @click="handleMoveCage"
+              >移动笼盒</el-button
+            >
             <el-button type="primary" size="small" icon="el-icon-edit">修改状态</el-button>
             <el-button type="primary" size="small" icon="el-icon-document">订单信息</el-button>
             <el-button type="primary" size="small" icon="el-icon-search">清空订单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印标签</el-button>
-            <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact">变更联系人</el-button>
+            <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact"
+              >变更联系人</el-button
+            >
             <el-button type="primary" size="small" icon="el-icon-warning">饲养异常</el-button>
             <el-button type="primary" size="small" icon="el-icon-setting">提交工单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">重打标签</el-button>
@@ -126,7 +166,8 @@
             width="500px"
             :close-on-click-modal="false"
             :close-on-press-escape="false"
-            :show-close="false">
+            :show-close="false"
+          >
             <div class="contact-dialog-content">
               <div class="current-contact">
                 <span class="label">当前联系人：</span>
@@ -142,12 +183,14 @@
                   placeholder="请输入联系人姓名搜索"
                   :remote-method="remoteSearch"
                   :loading="loading"
-                  style="width: 100%">
+                  style="width: 100%"
+                >
                   <el-option
                     v-for="item in contactOptions"
                     :key="item.id"
                     :label="item.name"
-                    :value="item.id">
+                    :value="item.id"
+                  >
                   </el-option>
                 </el-select>
               </div>
@@ -157,6 +200,62 @@
               <el-button type="primary" @click="confirmChangeContact">确 定</el-button>
             </div>
           </el-dialog>
+
+          <!-- 移动笼盒弹窗 -->
+          <el-dialog
+            title="移动笼盒"
+            :visible.sync="moveCageDialogVisible"
+            width="80%"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            :show-close="false"
+          >
+            <div class="move-cage-container">
+              <div class="source-cage">
+                <h4>源笼盒信息</h4>
+                <div class="cage-info">
+                  <p>位置：{{ currentSelectedCage.position }}</p>
+                  <p>笼架：{{ selectedRack ? selectedRack.label : '' }}</p>
+                  <p>动物数量：{{ getCageAnimalCount(currentSelectedCage.numbers) }}</p>
+                </div>
+              </div>
+              <div class="target-cage">
+                <h4>目标笼盒信息</h4>
+                <div class="cage-info">
+                  <p>位置：{{ targetCage.position }}</p>
+                  <p>笼架：{{ selectedRack ? selectedRack.label : '' }}</p>
+                  <p>动物数量：{{ getCageAnimalCount(targetCage.numbers) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 目标笼盒选择表格 -->
+            <div class="target-cage-selection">
+              <h4>选择目标笼盒</h4>
+              <el-table
+                :data="tableData"
+                style="width: 100%; padding-left: 80px"
+                :cell-class-name="getTargetCellClassName"
+                @cell-click="handleTargetCellClick"
+              >
+                <el-table-column prop="row" label="#" width="50"></el-table-column>
+                <el-table-column
+                  v-for="col in columns"
+                  :key="col"
+                  :prop="col"
+                  :label="col"
+                  width="100"
+                ></el-table-column>
+              </el-table>
+            </div>
+
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="handleMoveCageDialogClose">取 消</el-button>
+              <el-button type="primary" @click="confirmMoveCage" :disabled="!targetCage.position"
+                >确 定</el-button
+              >
+            </div>
+          </el-dialog>
         </div>
       </el-main>
     </el-container>
@@ -164,10 +263,24 @@
 </template>
 
 <script>
-import { getCourtyard, getTenement, getLaboratory, getRack, getCage, getCageAll } from '@/api/colleges';
+import {
+  getCourtyard,
+  getTenement,
+  getLaboratory,
+  getRack,
+  getCage,
+  getCageAll,
+} from '@/api/colleges';
 import Empty from '@/components/Empty';
 import { getCageused } from '@/api/order';
-import { getCageId, cleanRack, updateCageContact ,getUserById, allUsers } from '@/api/ani_manage';
+import {
+  getCageId,
+  cleanRack,
+  updateCageContact,
+  getUserById,
+  allUsers,
+  moveCage,
+} from '@/api/ani_manage';
 
 export default {
   components: {
@@ -217,17 +330,17 @@ export default {
       selectedCell: null, // 当前选中的单元格
       selectedCageInfo: {
         position: '', // 位置信息 (例如: A1)
-        row: null,    // 行号
-        column: '',   // 列号
-        index: null,  // 笼子索引
+        row: null, // 行号
+        column: '', // 列号
+        index: null, // 笼子索引
       },
       // 新增：当前操作选中的笼位信息
       currentSelectedCage: {
         isSelected: false,
         position: '', // 位置信息 (例如: A1)
-        row: null,    // 行号
-        column: '',   // 列号
-        index: null,  // 笼子索引
+        row: null, // 行号
+        column: '', // 列号
+        index: null, // 笼子索引
         numbers: null, // 从0开始的位置索引
       },
       currentCageId: null, // 当前选中笼子的ID
@@ -240,6 +353,17 @@ export default {
       currentContactId: null,
       selectedContactId: null,
       contactOptions: [],
+
+      moveCageDialogVisible: false, // 移动笼盒对话框显示状态
+      targetCage: {
+        position: '',
+        row: null,
+        column: '',
+        index: null,
+        numbers: null,
+        id: null,
+      },
+      targetRack: null,
     };
   },
   created() {
@@ -252,7 +376,8 @@ export default {
       if (!row.row) {
         cellKey = { row: row, column: column };
       }
-      const res = (row.row - 1) * this.columns.length + column.property.charCodeAt(0) - 'A'.charCodeAt(0);
+      const res =
+        (row.row - 1) * this.columns.length + column.property.charCodeAt(0) - 'A'.charCodeAt(0);
 
       // 原有逻辑保持不变
       if (this.activecage.includes(res)) {
@@ -260,9 +385,11 @@ export default {
       }
 
       // 新增：记录当前选中的笼位信息
-      if (column.property !== 'row') { // 忽略序号列
+      if (column.property !== 'row') {
+        // 忽略序号列
         // 计算从0开始的位置索引
-        const numbers = (row.row - 1) * this.tableWidth + (column.property.charCodeAt(0) - 'A'.charCodeAt(0));
+        const numbers =
+          (row.row - 1) * this.tableWidth + (column.property.charCodeAt(0) - 'A'.charCodeAt(0));
 
         this.currentSelectedCage = {
           isSelected: true,
@@ -270,7 +397,7 @@ export default {
           row: row.row,
           column: column.property,
           index: res,
-          numbers: numbers
+          numbers: numbers,
         };
 
         // 获取笼子ID
@@ -278,7 +405,7 @@ export default {
           try {
             const response = await getCageId({
               rack_id: this.selectedRack.id,
-              number: numbers
+              number: numbers,
             });
             this.currentCageId = response.data;
           } catch (error) {
@@ -293,10 +420,12 @@ export default {
       if (column.property === 'row') return '';
 
       const colKey = this.columns[columnIndex - 1];
-      const cellNumber = (row.row - 1) * this.columns.length + (colKey.charCodeAt(0) - 'A'.charCodeAt(0));
+      const cellNumber =
+        (row.row - 1) * this.columns.length + (colKey.charCodeAt(0) - 'A'.charCodeAt(0));
 
       // 检查是否是当前选中的笼位
-      const isCurrentSelected = this.currentSelectedCage.isSelected &&
+      const isCurrentSelected =
+        this.currentSelectedCage.isSelected &&
         this.currentSelectedCage.row === row.row &&
         this.currentSelectedCage.column === colKey;
 
@@ -306,12 +435,12 @@ export default {
       );
 
       // 检查是否是已清理的笼位
-      const isCleaned = this.cleanedCages && this.cleanedCages.some(
-        (cage) => cage.row === row.row && cage.column === colKey
-      );
+      const isCleaned =
+        this.cleanedCages &&
+        this.cleanedCages.some((cage) => cage.row === row.row && cage.column === colKey);
 
       // 检查是否是已预留的笼位
-      const cageInfo = this.cageInfoList.find(cage => cage.number === cellNumber);
+      const cageInfo = this.cageInfoList.find((cage) => cage.number === cellNumber);
       const isReserved = cageInfo && cageInfo.animal_count === 0 && cageInfo.is_reserved;
 
       // 返回对应的样式类名
@@ -571,7 +700,7 @@ export default {
 
       try {
         await cleanRack({
-          cage_id: this.currentCageId
+          cage_id: this.currentCageId,
         });
         this.$message.success('清理笼子成功');
 
@@ -584,7 +713,7 @@ export default {
           }
           this.cleanedCages.push({
             row: this.currentSelectedCage.row,
-            column: this.currentSelectedCage.column
+            column: this.currentSelectedCage.column,
           });
           // 重置选中状态
           this.currentSelectedCage = {
@@ -593,7 +722,7 @@ export default {
             row: null,
             column: '',
             index: null,
-            numbers: null
+            numbers: null,
           };
           this.currentCageId = null;
         }
@@ -622,7 +751,7 @@ export default {
 
       try {
         // 获取当前笼子的所有者信息
-        const cageInfo = this.cageInfoList.find(cage => cage.id === this.currentCageId);
+        const cageInfo = this.cageInfoList.find((cage) => cage.id === this.currentCageId);
         if (!cageInfo || !cageInfo.user_id) {
           this.$message.warning('未找到笼子所有者信息');
           return;
@@ -662,7 +791,7 @@ export default {
         // 这里可以添加远程搜索逻辑，目前使用本地过滤
         setTimeout(() => {
           this.loading = false;
-          this.contactOptions = this.contactOptions.filter(item => {
+          this.contactOptions = this.contactOptions.filter((item) => {
             return item.name.toLowerCase().includes(query.toLowerCase());
           });
         }, 200);
@@ -681,12 +810,12 @@ export default {
       try {
         await updateCageContact({
           cage_id: this.currentCageId,
-          user_id: this.selectedContactId
+          user_id: this.selectedContactId,
         });
-        
+
         this.$message.success('变更联系人成功');
         this.contactDialogVisible = false;
-        
+
         // 刷新笼架数据
         if (this.selectedRack && this.selectedRack.id) {
           await this.getCageUsed_(this.selectedRack.id);
@@ -694,6 +823,146 @@ export default {
       } catch (error) {
         console.error('变更联系人失败:', error);
         this.$message.error('变更联系人失败');
+      }
+    },
+
+    // 处理移动笼盒按钮点击
+    handleMoveCage() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要移动的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      this.moveCageDialogVisible = true;
+    },
+
+    // 处理移动笼盒对话框关闭
+    handleMoveCageDialogClose() {
+      this.targetCage = {
+        position: '',
+        row: null,
+        column: '',
+        index: null,
+        numbers: null,
+        id: null,
+      };
+      this.targetRack = null;
+      this.moveCageDialogVisible = false;
+    },
+
+    // 获取笼子动物数量
+    getCageAnimalCount(number) {
+      const cageInfo = this.cageInfoList.find((cage) => cage.number === number);
+      return cageInfo ? cageInfo.animal_count : 0;
+    },
+
+    // 处理目标笼盒单元格点击
+    async handleTargetCellClick(row, column) {
+      if (column.property === 'row') return;
+
+      const numbers =
+        (row.row - 1) * this.tableWidth + (column.property.charCodeAt(0) - 'A'.charCodeAt(0));
+
+      // 检查是否是当前选中的源笼盒
+      if (numbers === this.currentSelectedCage.numbers) {
+        this.$message.warning('不能选择源笼盒作为目标位置');
+        return;
+      }
+
+      // 检查目标笼盒是否已被占用
+      const targetCageInfo = this.cageInfoList.find((cage) => cage.number === numbers);
+      if (targetCageInfo && targetCageInfo.animal_count > 0) {
+        this.$message.warning('目标笼盒已被占用，请选择其他位置');
+        return;
+      }
+
+      this.targetCage = {
+        position: `${column.property}${row.row}`,
+        row: row.row,
+        column: column.property,
+        index: numbers,
+        numbers: numbers,
+      };
+
+      // 获取目标笼盒ID
+      try {
+        const response = await getCageId({
+          rack_id: this.selectedRack.id,
+          number: numbers,
+        });
+        this.targetCage.id = response.data;
+      } catch (error) {
+        console.error('获取目标笼盒ID失败:', error);
+        this.$message.error('获取目标笼盒ID失败');
+      }
+    },
+
+    // 获取目标单元格的类名
+    getTargetCellClassName({ row, columnIndex, column }) {
+      if (column.property === 'row') return '';
+
+      const colKey = this.columns[columnIndex - 1];
+      const cellNumber =
+        (row.row - 1) * this.columns.length + (colKey.charCodeAt(0) - 'A'.charCodeAt(0));
+
+      // 检查是否是当前选中的目标笼位
+      const isTargetSelected =
+        this.targetCage.position &&
+        this.targetCage.row === row.row &&
+        this.targetCage.column === colKey;
+
+      // 检查是否是源笼位
+      const isSource = this.currentSelectedCage.numbers === cellNumber;
+
+      // 检查笼位是否已被占用
+      const cageInfo = this.cageInfoList.find((cage) => cage.number === cellNumber);
+      const isOccupied = cageInfo && cageInfo.animal_count > 0;
+
+      if (isTargetSelected) return 'target-selected-cell';
+      if (isSource) return 'source-cell';
+      if (isOccupied) return 'occupied-cell';
+      return 'available-cell';
+    },
+
+    // 确认移动笼盒
+    async confirmMoveCage() {
+      if (!this.targetCage.id) {
+        this.$message.warning('请选择目标笼盒');
+        return;
+      }
+
+      try {
+        await moveCage({
+          cage_id: this.currentCageId,
+          newcage_id: this.targetCage.id,
+        });
+
+        this.$message.success('移动笼盒成功');
+        this.moveCageDialogVisible = false;
+
+        // 刷新笼架数据
+        if (this.selectedRack && this.selectedRack.id) {
+          await this.getCageUsed_(this.selectedRack.id);
+        }
+
+        // 重置选中状态
+        this.currentSelectedCage = {
+          isSelected: false,
+          position: '',
+          row: null,
+          column: '',
+          index: null,
+          numbers: null,
+        };
+        this.currentCageId = null;
+      } catch (error) {
+        console.error('移动笼盒失败:', error);
+        this.$message.error('移动笼盒失败');
       }
     },
   },
@@ -706,12 +975,12 @@ export default {
         row: null,
         column: '',
         index: null,
-        numbers: null
+        numbers: null,
       };
       this.currentCageId = null;
       this.cleanedCages = []; // 重置已清理的笼子列表
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -730,7 +999,7 @@ export default {
   /* 浅灰色 */
 }
 
-.el-table tbody tr:hover>td {
+.el-table tbody tr:hover > td {
   background: #f9f9f9 !important;
 }
 
@@ -745,7 +1014,7 @@ export default {
 
 .button-group .el-button {
   margin: 0;
-  background-color: #409EFF;
+  background-color: #409eff;
   border: none;
   color: white;
   padding: 8px 15px;
@@ -762,12 +1031,12 @@ export default {
 }
 
 /* 调整按钮内图标和文字的间距 */
-.el-button [class^="el-icon-"] {
+.el-button [class^='el-icon-'] {
   margin-right: 5px;
 }
 
 /* 确保按钮组之间有适当的间距 */
-.button-group+.button-group {
+.button-group + .button-group {
   margin-top: 8px;
 }
 
@@ -799,7 +1068,7 @@ export default {
 }
 
 /* 确保选中状态的优先级高于hover效果 */
-.el-table tbody tr:hover>td.selected-cell {
+.el-table tbody tr:hover > td.selected-cell {
   background-color: #ff4444 !important;
   animation: flash 1s infinite !important;
 }
@@ -833,7 +1102,7 @@ export default {
 }
 
 /* 确保当前选中状态的优先级高于其他效果 */
-.el-table tbody tr:hover>td.current-selected-cell {
+.el-table tbody tr:hover > td.current-selected-cell {
   background-color: #ff4444 !important;
   animation: flash 1s infinite !important;
 }
@@ -844,20 +1113,21 @@ export default {
 }
 
 /* 已清理或预留的笼子样式 */
-.cleaned-cell, .reserved-cell {
-  background-color: #409EFF !important;
+.cleaned-cell,
+.reserved-cell {
+  background-color: #409eff !important;
   color: white !important;
 }
 
 /* 确保已清理或预留状态的优先级高于hover效果 */
-.el-table tbody tr:hover>td.cleaned-cell,
-.el-table tbody tr:hover>td.reserved-cell {
-  background-color: #409EFF !important;
+.el-table tbody tr:hover > td.cleaned-cell,
+.el-table tbody tr:hover > td.reserved-cell {
+  background-color: #409eff !important;
 }
 
 .el-table td.cleaned-cell,
 .el-table td.reserved-cell {
-  background-color: #409EFF !important;
+  background-color: #409eff !important;
 }
 
 /* 色卡提示区域样式 */
@@ -871,7 +1141,7 @@ export default {
 .legend-toggle {
   width: 24px;
   height: 24px;
-  background-color: #409EFF;
+  background-color: #409eff;
   color: white;
   border-radius: 4px;
   display: flex;
@@ -904,7 +1174,7 @@ export default {
   color: #303133;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #EBEEF5;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .legend-item {
@@ -931,7 +1201,7 @@ export default {
 }
 
 .color-block.cleaned-cell {
-  background-color: #409EFF;
+  background-color: #409eff;
 }
 
 .color-block.default-cell {
@@ -967,5 +1237,68 @@ export default {
 .dialog-footer {
   text-align: right;
   padding-top: 20px;
+}
+
+.move-cage-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.source-cage,
+.target-cage {
+  flex: 1;
+  margin: 0 20px;
+  padding: 20px;
+  background-color: white;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.cage-info {
+  margin-top: 10px;
+}
+
+.cage-info p {
+  margin: 5px 0;
+  color: #606266;
+}
+
+.target-cage-selection {
+  margin-top: 20px;
+}
+
+.target-cage-selection h4 {
+  margin-bottom: 15px;
+  color: #303133;
+}
+
+/* 目标笼盒选择相关样式 */
+.target-selected-cell {
+  background-color: #67c23a !important;
+  color: white !important;
+}
+
+.source-cell {
+  background-color: #f56c6c !important;
+  color: white !important;
+}
+
+.occupied-cell {
+  background-color: #909399 !important;
+  color: white !important;
+  cursor: not-allowed;
+}
+
+.available-cell {
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.available-cell:hover {
+  background-color: #ecf5ff !important;
 }
 </style>

@@ -3,9 +3,9 @@ import request from '@/utils/request'
 //新增动物
 export function animalImport(data) {
     return request({
-      url: '/animal/care/animalimport',
-      method: 'post',
-      data
+        url: '/animal/care/animalimport',
+        method: 'post',
+        data
     })
 }
 
@@ -39,8 +39,8 @@ export function updateCageContact(params) {
 //查询所有用户
 export function allUsers() {
     return request({
-      url: '/user/all',
-      method: 'get'
+        url: '/user/all',
+        method: 'get'
     })
 }
 
@@ -49,6 +49,15 @@ export function getUserById(params) {
     return request({
         url: '/user/get',
         method: 'get',
+        params
+    })
+}
+
+//移动笼盒
+export function moveCage(params) {
+    return request({
+        url: '/animal/fac/cage/move',
+        method: 'put',
         params
     })
 }
