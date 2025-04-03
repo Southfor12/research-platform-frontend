@@ -1,45 +1,22 @@
 <!-- 这是饲养笼架的显示模块 -->
+ <!-- 包含了饲养笼架的表格和功能按钮，请耐心阅读 -->
 <template>
-  <div
-    v-loading="loading"
-    class="app-container"
-    element-loading-text="数据查询中..."
-    element-loading-spinner="el-icon-loading"
-  >
+  <div v-loading="loading" class="app-container" element-loading-text="数据查询中..."
+    element-loading-spinner="el-icon-loading">
     <el-container>
       <el-aside width="240px" class="sidebar">
         <h3 class="sidebar-title">区域分类</h3>
-        <el-tree
-          :data="categories"
-          :default-expand-all="true"
-          node-key="id"
-          @node-click="handleCategoryClick"
-          class="custom-tree"
-          :render-content="renderTreeNode"
-        />
+        <el-tree :data="categories" :default-expand-all="true" node-key="id" @node-click="handleCategoryClick"
+          class="custom-tree" :render-content="renderTreeNode" />
       </el-aside>
       <el-main>
         <!-- 只有在选中第三级节点时显示按钮 -->
-        <el-button
-          v-if="showAddButton"
-          class="right"
-          type="primary"
-          size="small"
-          icon="el-icon-plus"
-          :min-width="minWidth"
-          :min-height="minHeight"
-          @click="toAdd(selectedLaboratory.id)"
-        >
+        <el-button v-if="showAddButton" class="right" type="primary" size="small" icon="el-icon-plus"
+          :min-width="minWidth" :min-height="minHeight" @click="toAdd(selectedLaboratory.id)">
           添加笼架
         </el-button>
-        <el-button
-          v-if="showEditButton"
-          class="right"
-          type="primary"
-          size="small"
-          icon="el-icon-plus"
-          @click="toEdit()"
-        >
+        <el-button v-if="showEditButton" class="right" type="primary" size="small" icon="el-icon-plus"
+          @click="toEdit()">
           修改笼架
         </el-button>
 
@@ -49,23 +26,33 @@
           <el-row>
             <el-col :span="8">
               <h5>选择模式</h5>
-              <el-checkbox-group v-model="selectionMode">
-                <el-checkbox label="all">所有</el-checkbox>
-                <el-checkbox label="cage">笼子</el-checkbox>
-                <el-checkbox label="position">位置</el-checkbox>
-              </el-checkbox-group>
+              <el-radio-group v-model="selectionMode">
+                <el-radio label="all">所有</el-radio>
+                <el-radio label="cage">笼盒</el-radio>
+                <el-radio label="position">位置</el-radio>
+              </el-radio-group>
             </el-col>
             <!-- 笼子显示字段 -->
             <el-col :span="8">
-              <h5>笼子显示</h5>
+              <h5>笼盒显示</h5>
               <el-checkbox-group v-model="cageFields">
-                <el-checkbox label="owner">所有者</el-checkbox>
-                <el-checkbox label="phone">电话</el-checkbox>
-                <el-checkbox label="topic">课题</el-checkbox>
+                <el-checkbox label="cageName">笼盒名称</el-checkbox>
+                <el-checkbox label="animalType">动物类别</el-checkbox>
+                <el-checkbox label="animalSpecies">动物品系</el-checkbox>
+                <el-checkbox label="speciesShort">品系简称</el-checkbox>
+                <el-checkbox label="baseType">基因型</el-checkbox>
+                <el-checkbox label="birthDate">出生日期</el-checkbox>
+                <el-checkbox label="gender">性别</el-checkbox>
+                <el-checkbox label="furColor">毛色</el-checkbox>
+                <el-checkbox label="status">状态</el-checkbox>
+                <el-checkbox label="experimentDate">实验日期</el-checkbox>
+                <el-checkbox label="project">项目</el-checkbox>
+                <el-checkbox label="projectNumber">项目编号</el-checkbox>
                 <el-checkbox label="contact">联系人</el-checkbox>
                 <el-checkbox label="contactPhone">联系电话</el-checkbox>
                 <el-checkbox label="team">课题组</el-checkbox>
                 <el-checkbox label="price">价格</el-checkbox>
+                <el-checkbox label="orderNumber">订单号</el-checkbox>
               </el-checkbox-group>
             </el-col>
 
@@ -77,47 +64,49 @@
                 <el-checkbox label="lock">锁定</el-checkbox>
                 <el-checkbox label="allocationInfo">分配信息</el-checkbox>
                 <el-checkbox label="orderReserved">订单预留</el-checkbox>
+                <el-checkbox label="teamReserved">排队预约</el-checkbox>
               </el-checkbox-group>
             </el-col>
           </el-row>
 
           <!-- 表格 -->
-          <el-table
-            :data="tableData"
-            style="width: 100%; padding-left: 80px; margin-bottom: 20px"
-            :cell-class-name="getCellClassName"
-            @cell-click="handleCellClick"
-          >
+          <el-table :data="tableData" style="width: 100%; padding-left: 80px; margin-bottom: 20px"
+            :cell-class-name="getCellClassName" @cell-click="handleCellClick">
             <el-table-column prop="row" label="#" width="50"></el-table-column>
-            <el-table-column
-              v-for="col in columns"
-              :key="col"
-              :prop="col"
-              :label="col"
-              width="100"
-            ></el-table-column>
+            <el-table-column v-for="col in columns" :key="col" :prop="col" :label="col" width="100">
+              <template slot-scope="scope">
+                <el-tooltip
+                  v-if="shouldShowTooltip"
+                  :content="tooltipContent"
+                  placement="top"
+                  :visible-arrow="true"
+                  effect="light"
+                  popper-class="cage-info-tooltip"
+                  :enterable="false"
+                  :value="tooltipVisible && hoveredCell && hoveredCell.row === scope.row.row && hoveredCell.col === col"
+                  :manual="true">
+                  <div
+                    @mouseenter="handleCellHover(scope.row, col)"
+                    @mouseleave="handleCellLeave"
+                    class="cell-content">
+                    {{ scope.row[col] }}
+                  </div>
+                </el-tooltip>
+                <span v-else>{{ scope.row[col] }}</span>
+              </template>
+            </el-table-column>
           </el-table>
 
           <!-- 功能按钮组 - 第一行 -->
           <div class="button-group">
-            <el-button type="primary" size="small" icon="el-icon-delete" @click="handleCleanRack"
-              >清理笼盒</el-button
-            >
+            <el-button type="primary" size="small" icon="el-icon-delete" @click="handleCleanRack">清理笼盒</el-button>
             <el-button type="primary" size="small" icon="el-icon-edit">编辑笼盒</el-button>
-            <el-button type="primary" size="small" icon="el-icon-plus" @click="handleMoveCage"
-              >移动笼盒</el-button
-            >
-            <el-button type="primary" size="small" icon="el-icon-edit" @click="handleUpdateStatus"
-              >修改状态</el-button
-            >
-            <el-button type="primary" size="small" icon="el-icon-document" @click="handleOrderInfo"
-              >订单信息</el-button
-            >
+            <el-button type="primary" size="small" icon="el-icon-plus" @click="handleMoveCage">移动笼盒</el-button>
+            <el-button type="primary" size="small" icon="el-icon-edit" @click="handleUpdateStatus">修改状态</el-button>
+            <el-button type="primary" size="small" icon="el-icon-document" @click="handleOrderInfo">订单信息</el-button>
             <el-button type="primary" size="small" icon="el-icon-search">清空订单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印标签</el-button>
-            <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact"
-              >变更联系人</el-button
-            >
+            <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact">变更联系人</el-button>
             <el-button type="primary" size="small" icon="el-icon-warning">饲养异常</el-button>
             <el-button type="primary" size="small" icon="el-icon-setting">提交工单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">重打标签</el-button>
@@ -125,15 +114,9 @@
 
           <!-- 功能按钮组 - 第二行 -->
           <div class="button-group">
-            <el-button type="primary" size="small" icon="el-icon-upload2" @click="handleImportCage"
-              >导入笼盒</el-button
-            >
-            <el-button type="primary" size="small" icon="el-icon-setting" @click="handleLockCage"
-              >笼位锁定</el-button
-            >
-            <el-button type="primary" size="small" icon="el-icon-close" @click="handleUnlockCage"
-              >取消锁定</el-button
-            >
+            <el-button type="primary" size="small" icon="el-icon-upload2" @click="handleImportCage">导入笼盒</el-button>
+            <el-button type="primary" size="small" icon="el-icon-setting" @click="handleLockCage">笼位锁定</el-button>
+            <el-button type="primary" size="small" icon="el-icon-close" @click="handleUnlockCage">取消锁定</el-button>
             <el-button type="primary" size="small" icon="el-icon-share">笼位分配</el-button>
             <el-button type="primary" size="small" icon="el-icon-close">取消分配</el-button>
             <el-button type="primary" size="small" icon="el-icon-user">笼位授权</el-button>
@@ -174,14 +157,8 @@
           </div>
 
           <!-- 变更联系人弹窗 -->
-          <el-dialog
-            title="变更联系人"
-            :visible.sync="contactDialogVisible"
-            width="500px"
-            :close-on-click-modal="false"
-            :close-on-press-escape="false"
-            :show-close="false"
-          >
+          <el-dialog title="变更联系人" :visible.sync="contactDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
             <div class="contact-dialog-content">
               <div class="current-contact">
                 <span class="label">当前联系人：</span>
@@ -189,22 +166,9 @@
               </div>
               <div class="new-contact">
                 <span class="label">选择新联系人：</span>
-                <el-select
-                  v-model="selectedContactId"
-                  filterable
-                  remote
-                  reserve-keyword
-                  placeholder="请输入联系人姓名搜索"
-                  :remote-method="remoteSearch"
-                  :loading="loading"
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="item in contactOptions"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.id"
-                  >
+                <el-select v-model="selectedContactId" filterable remote reserve-keyword placeholder="请输入联系人姓名搜索"
+                  :remote-method="remoteSearch" :loading="loading" style="width: 100%">
+                  <el-option v-for="item in contactOptions" :key="item.id" :label="item.name" :value="item.id">
                   </el-option>
                 </el-select>
               </div>
@@ -216,31 +180,16 @@
           </el-dialog>
 
           <!-- 导入笼盒弹窗 -->
-          <el-dialog
-            title="导入笼盒"
-            :visible.sync="importCageDialogVisible"
-            width="500px"
-            :close-on-click-modal="false"
-            :close-on-press-escape="false"
-            :show-close="false"
-          >
+          <el-dialog title="导入笼盒" :visible.sync="importCageDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
             <div class="import-cage-content">
               <el-form :model="importCageForm" ref="importCageForm" label-width="100px">
                 <el-form-item label="笼盒名称" prop="name">
                   <el-input v-model="importCageForm.name" placeholder="请输入笼盒名称"></el-input>
                 </el-form-item>
                 <el-form-item label="笼盒类型" prop="boxType">
-                  <el-select
-                    v-model="importCageForm.boxType"
-                    placeholder="请选择笼盒类型"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in boxTypeOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    >
+                  <el-select v-model="importCageForm.boxType" placeholder="请选择笼盒类型" style="width: 100%">
+                    <el-option v-for="item in boxTypeOptions" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
                 </el-form-item>
@@ -254,12 +203,8 @@
                   <el-input v-model="importCageForm.customerContact" disabled></el-input>
                 </el-form-item>
                 <el-form-item label="价格" prop="price">
-                  <el-input-number
-                    v-model="importCageForm.price"
-                    :min="0"
-                    :precision="2"
-                    style="width: 100%"
-                  ></el-input-number>
+                  <el-input-number v-model="importCageForm.price" :min="0" :precision="2"
+                    style="width: 100%"></el-input-number>
                 </el-form-item>
               </el-form>
             </div>
@@ -270,14 +215,8 @@
           </el-dialog>
 
           <!-- 移动笼盒弹窗 -->
-          <el-dialog
-            title="移动笼盒"
-            :visible.sync="moveCageDialogVisible"
-            width="80%"
-            :close-on-click-modal="false"
-            :close-on-press-escape="false"
-            :show-close="false"
-          >
+          <el-dialog title="移动笼盒" :visible.sync="moveCageDialogVisible" width="80%" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
             <div class="move-cage-container">
               <div class="source-cage">
                 <h4>源笼盒信息</h4>
@@ -304,69 +243,36 @@
             <!-- 目标笼盒选择表格 -->
             <div class="target-cage-selection">
               <h4>选择目标笼盒</h4>
-              <el-table
-                :data="tableData"
-                style="width: 100%; padding-left: 80px"
-                :cell-class-name="getTargetCellClassName"
-                @cell-click="handleTargetCellClick"
-              >
+              <el-table :data="tableData" style="width: 100%; padding-left: 80px"
+                :cell-class-name="getTargetCellClassName" @cell-click="handleTargetCellClick">
                 <el-table-column prop="row" label="#" width="50"></el-table-column>
-                <el-table-column
-                  v-for="col in columns"
-                  :key="col"
-                  :prop="col"
-                  :label="col"
-                  width="100"
-                ></el-table-column>
+                <el-table-column v-for="col in columns" :key="col" :prop="col" :label="col"
+                  width="100"></el-table-column>
               </el-table>
             </div>
 
             <div slot="footer" class="dialog-footer">
               <el-button @click="handleMoveCageDialogClose">取 消</el-button>
-              <el-button type="primary" @click="confirmMoveCage" :disabled="!targetCage.position"
-                >确 定</el-button
-              >
+              <el-button type="primary" @click="confirmMoveCage" :disabled="!targetCage.position">确 定</el-button>
             </div>
           </el-dialog>
 
           <!-- 修改状态弹窗 -->
-          <el-dialog
-            title="修改状态"
-            :visible.sync="statusDialogVisible"
-            width="500px"
-            :close-on-click-modal="false"
-            :close-on-press-escape="false"
-            :show-close="false"
-          >
+          <el-dialog title="修改状态" :visible.sync="statusDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
             <div class="status-dialog-content">
               <el-form :model="statusForm" ref="statusForm" label-width="100px">
                 <el-form-item label="动物状态" prop="animalStatus">
-                  <el-select
-                    v-model="statusForm.animalStatus"
-                    placeholder="请选择动物状态"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in animalStatusList"
-                      :key="item.id"
-                      :label="item.status"
-                      :value="item.status"
-                    >
+                  <el-select v-model="statusForm.animalStatus" placeholder="请选择动物状态" style="width: 100%">
+                    <el-option v-for="item in animalStatusList" :key="item.id" :label="item.status"
+                      :value="item.status">
                     </el-option>
                   </el-select>
                 </el-form-item>
                 <el-form-item label="实验状态" prop="experimentalStatus">
-                  <el-select
-                    v-model="statusForm.experimentalStatus"
-                    placeholder="请选择实验状态"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in experimentalStatusOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    >
+                  <el-select v-model="statusForm.experimentalStatus" placeholder="请选择实验状态" style="width: 100%">
+                    <el-option v-for="item in experimentalStatusOptions" :key="item.value" :label="item.label"
+                      :value="item.value">
                     </el-option>
                   </el-select>
                 </el-form-item>
@@ -379,40 +285,18 @@
           </el-dialog>
 
           <!-- 订单信息弹窗 -->
-          <el-dialog
-            title="订单信息"
-            :visible.sync="orderInfoDialogVisible"
-            width="500px"
-            :close-on-click-modal="false"
-            :close-on-press-escape="false"
-            custom-class="order-info-dialog"
-            :show-close="false"
-          >
+          <el-dialog title="订单信息" :visible.sync="orderInfoDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" custom-class="order-info-dialog" :show-close="false">
             <div class="order-info-content">
               <el-form :model="orderInfo" ref="orderInfoForm" label-width="120px">
                 <div class="info-section">
                   <el-form-item label="饲养订单" prop="care_order_id">
-                    <el-input
-                      v-model="orderInfo.care_order_id"
-                      placeholder="请输入饲养订单号"
-                    ></el-input>
+                    <el-input v-model="orderInfo.care_order_id" placeholder="请输入饲养订单号"></el-input>
                   </el-form-item>
                   <el-form-item label="技术服务订单" prop="work_order_id">
-                    <el-select
-                      v-model="orderInfo.work_order_id"
-                      multiple
-                      filterable
-                      allow-create
-                      default-first-option
-                      placeholder="请输入技术服务订单号"
-                      style="width: 100%"
-                    >
-                      <el-option
-                        v-for="item in orderInfo.work_order_id"
-                        :key="item"
-                        :label="item"
-                        :value="item"
-                      >
+                    <el-select v-model="orderInfo.work_order_id" multiple filterable allow-create default-first-option
+                      placeholder="请输入技术服务订单号" style="width: 100%">
+                      <el-option v-for="item in orderInfo.work_order_id" :key="item" :label="item" :value="item">
                       </el-option>
                     </el-select>
                   </el-form-item>
@@ -420,13 +304,7 @@
                     <el-input v-model="orderInfo.user" placeholder="请输入客户联系人"></el-input>
                   </el-form-item>
                   <el-form-item label="价格" prop="price">
-                    <el-input-number
-                      v-model="orderInfo.price"
-                      :precision="2"
-                      :step="0.1"
-                      :min="0"
-                      style="width: 100%"
-                    >
+                    <el-input-number v-model="orderInfo.price" :precision="2" :step="0.1" :min="0" style="width: 100%">
                       <template slot="append">元/笼/天</template>
                     </el-input-number>
                   </el-form-item>
@@ -464,12 +342,12 @@ import {
   moveCage,
   getCageBoxId,
   getOrderInfo,
-  // getOrderDetail,
   importNewCage,
   updateAnimalStatus,
   updateOrderInfo,
   lockCage,
   unlockCage,
+  getCageBoxInfo,
 } from '@/api/ani_manage';
 import { getAnimalStatus } from '@/api/ani_setting';
 
@@ -489,9 +367,9 @@ export default {
       activeCells: [], // 选择的
       activeCells_: [], // 已选择的            +
 
-      selectionMode: [], // 选择模式默认全选
-      cageFields: [], // 笼子字段默认全不选
-      positionFields: [], // 位置字段默认全不选
+      selectionMode: 'all', // 选择模式默认为"所有"
+      cageFields: [], // 笼子字段默认不选中
+      positionFields: [], // 位置字段默认不选中
 
       minWidth: 80, // 设置每个格子的最小宽度
       minHeight: 50, // 设置每个格子的最小高度
@@ -595,12 +473,31 @@ export default {
         user: '',
         price: 0,
       },
+
+      loadingTooltip: false,
+      hoveredCell: null,
+      tooltipContent: '',
+      cageInfoCache: new Map(), // 添加缓存
+      tooltipVisible: false, // 控制tooltip显示
     };
   },
   created() {
     this.init();
   },
   methods: {
+    // 添加防抖函数
+    debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    },
+
     // 处理单元格点击事件
     async handleCellClick(row, column) {
       let cellKey = { row: row.row, column: column.property };
@@ -637,6 +534,7 @@ export default {
             const response = await getCageId({
               rack_id: this.selectedRack.id,
               number: numbers,
+              hideSuccess: true
             });
             this.currentCageId = response.data;
           } catch (error) {
@@ -698,11 +596,11 @@ export default {
     getCageUsed_(id) {
       try {
         return new Promise((resolve, reject) => {
-          getCageused({ cage_rack_id: id })
+          getCageused({ cage_rack_id: id, hideSuccess: true })
             .then((res) => {
               this.activecage = res.data;
               // 获取笼子的详细信息
-              getCageAll({ cage_rack_id: id })
+              getCageAll({ cage_rack_id: id, hideSuccess: true })
                 .then((cageRes) => {
                   this.cageInfoList = cageRes.data;
                   resolve();
@@ -775,7 +673,7 @@ export default {
     // 获取 Campus 列表
     getCampusList() {
       return new Promise((resolve, reject) => {
-        getCourtyard({ page: 1, pageSize: 1000 })
+        getCourtyard({ page: 1, pageSize: 1000, hideSuccess: true })
           .then((res) => {
             this.campusList = res.data.content;
             resolve();
@@ -789,7 +687,7 @@ export default {
     // 获取 Tenement 列表
     getTenementList() {
       return new Promise((resolve, reject) => {
-        getTenement({ page: 1, pageSize: 1000 })
+        getTenement({ page: 1, pageSize: 1000, hideSuccess: true })
           .then((res) => {
             this.tenementList = res.data.content;
             resolve();
@@ -803,7 +701,7 @@ export default {
     // 获取 Laboratory 列表
     getLaboratoryList() {
       return new Promise((resolve, reject) => {
-        getLaboratory({ page: 1, pageSize: 1000 })
+        getLaboratory({ page: 1, pageSize: 1000, hideSuccess: true })
           .then((res) => {
             this.laboratoryList = res.data.content;
             resolve();
@@ -817,7 +715,7 @@ export default {
     // 获取 Rack 列表
     async getRackList(id) {
       try {
-        const res = await getRack({ roomId: id, page: 1, pageSize: 1000 });
+        const res = await getRack({ roomId: id, page: 1, pageSize: 1000, hideSuccess: true });
         this.cageList = res.data.content;
       } catch (error) {
         console.error(error);
@@ -1347,6 +1245,7 @@ export default {
         const response = await getCageId({
           rack_id: this.selectedRack.id,
           number: numbers,
+          hideSuccess: true
         });
         this.targetCage.id = response.data;
       } catch (error) {
@@ -1442,8 +1341,8 @@ export default {
             work_order_id: Array.isArray(response.data.work_order_id)
               ? response.data.work_order_id
               : response.data.work_order_id
-              ? [response.data.work_order_id]
-              : [],
+                ? [response.data.work_order_id]
+                : [],
           };
           this.orderInfoDialogVisible = true;
         } else {
@@ -1554,6 +1453,218 @@ export default {
         this.$message.error('笼位解锁失败');
       }
     },
+
+    // 修改后的handleCellHover方法
+    async handleCellHover(row, col) {
+      // 检查是否有需要显示的字段
+      const fieldsToShow = this.cageFields.filter(field => 
+        ['cageName', 'orderNumber', 'contact', 'price', 'contactPhone', 
+         'animalType', 'animalSpecies', 'baseType', 'birthDate', 'gender', 
+         'furColor', 'status'].includes(field)
+      );
+      if (fieldsToShow.length === 0) return;
+      
+      const position = `${col}${row.row}`;
+      this.hoveredCell = { row: row.row, col: col };
+      
+      // 生成缓存key，包含选中的字段信息
+      const cacheKey = `${position}-${fieldsToShow.join('-')}`;
+      
+      // 如果缓存中有数据，直接使用
+      if (this.cageInfoCache.has(cacheKey)) {
+        this.tooltipContent = this.cageInfoCache.get(cacheKey);
+        this.tooltipVisible = true;
+        return;
+      }
+
+      this.loadingTooltip = true;
+      this.tooltipContent = '加载中...';
+      this.tooltipVisible = true;
+
+      try {
+        const numbers = (row.row - 1) * this.columns.length + (col.charCodeAt(0) - 'A'.charCodeAt(0));
+        
+        // 获取笼子ID
+        const cageResponse = await getCageId({
+          rack_id: this.selectedRack.id,
+          number: numbers,
+          hideSuccess: true
+        });
+
+        if (!cageResponse.data) {
+          const content = '暂无信息';
+          this.tooltipContent = content;
+          this.cageInfoCache.set(cacheKey, content);
+          return;
+        }
+
+        let contentParts = [];
+
+        // 处理需要笼盒信息的字段
+        const needCageBoxInfo = fieldsToShow.some(field => 
+          ['cageName', 'animalType', 'animalSpecies', 'baseType', 'birthDate', 'gender', 'furColor', 'status'].includes(field)
+        );
+
+        // 处理需要订单信息的字段
+        const needOrderInfo = fieldsToShow.some(field => 
+          ['orderNumber', 'contact', 'price', 'contactPhone'].includes(field)
+        );
+
+        // 并行获取所需信息
+        const [cageBoxResponse, orderResponse] = await Promise.all([
+          needCageBoxInfo ? getCageBoxId({
+            cage_id: cageResponse.data,
+            hideSuccess: true
+          }) : Promise.resolve(null),
+          needOrderInfo ? getOrderInfo({
+            cage_id: cageResponse.data,
+            hideSuccess: true
+          }) : Promise.resolve(null)
+        ]);
+
+        // 处理笼盒信息
+        if (needCageBoxInfo && cageBoxResponse && cageBoxResponse.data) {
+          // 处理笼盒名称
+          if (fieldsToShow.includes('cageName')) {
+            contentParts.push(`笼盒名称：${cageBoxResponse.data.name || '暂无名称'}`);
+          }
+
+          // 获取动物信息
+          const animalInfoResponse = await getCageBoxInfo({
+            cage_box_id: cageBoxResponse.data.id
+          });
+
+          if (animalInfoResponse.data && animalInfoResponse.data.animalImports && animalInfoResponse.data.animalImports.length > 0) {
+            // 获取第一个动物的信息作为显示
+            const animal = animalInfoResponse.data.animalImports[0];
+            
+            // 处理动物类别
+            if (fieldsToShow.includes('animalType')) {
+              contentParts.push(`动物类别：${animal.type || '暂无'}`);
+            }
+            
+            // 处理动物品系
+            if (fieldsToShow.includes('animalSpecies')) {
+              contentParts.push(`动物品系：${animal.strain || '暂无'}`);
+            }
+            
+            // 处理基因型
+            if (fieldsToShow.includes('baseType')) {
+              contentParts.push(`基因型：${animal.genotype || '暂无'}`);
+            }
+            
+            // 处理出生日期
+            if (fieldsToShow.includes('birthDate')) {
+              const birthDate = animal.birth_time ? animal.birth_time.split(' ')[0] : '暂无';
+              contentParts.push(`出生日期：${birthDate}`);
+            }
+            
+            // 处理性别
+            if (fieldsToShow.includes('gender')) {
+              contentParts.push(`性别：${animal.gender || '暂无'}`);
+            }
+            
+            // 处理毛色
+            if (fieldsToShow.includes('furColor')) {
+              contentParts.push(`毛色：${animal.color || '暂无'}`);
+            }
+            
+            // 处理状态
+            if (fieldsToShow.includes('status')) {
+              contentParts.push(`状态：${animal.status || '暂无'}`);
+            }
+          } else {
+            // 如果没有动物信息，为每个需要动物信息的字段添加"暂无"
+            for (const field of fieldsToShow) {
+              if (['animalType', 'animalSpecies', 'baseType', 'birthDate', 'gender', 'furColor', 'status'].includes(field)) {
+                switch (field) {
+                  case 'animalType':
+                    contentParts.push('动物类别：暂无');
+                    break;
+                  case 'animalSpecies':
+                    contentParts.push('动物品系：暂无');
+                    break;
+                  case 'baseType':
+                    contentParts.push('基因型：暂无');
+                    break;
+                  case 'birthDate':
+                    contentParts.push('出生日期：暂无');
+                    break;
+                  case 'gender':
+                    contentParts.push('性别：暂无');
+                    break;
+                  case 'furColor':
+                    contentParts.push('毛色：暂无');
+                    break;
+                  case 'status':
+                    contentParts.push('状态：暂无');
+                    break;
+                }
+              }
+            }
+          }
+        }
+        
+        // 处理订单信息
+        if (needOrderInfo && orderResponse && orderResponse.data) {
+          for (const field of fieldsToShow) {
+            switch (field) {
+              case 'orderNumber':
+                contentParts.push(`订单号：${orderResponse.data.care_order_id || '暂无'}`);
+                break;
+              case 'contact':
+                contentParts.push(`联系人：${orderResponse.data.user || '暂无'}`);
+                break;
+              case 'contactPhone':
+                contentParts.push(`联系方式：${orderResponse.data.user_phone || '暂无'}`);
+                break;
+              case 'price':
+                const price = orderResponse.data.price;
+                const formattedPrice = price ? `${parseFloat(price).toFixed(2)}元/笼/天` : '暂无';
+                contentParts.push(`价格：${formattedPrice}`);
+                break;
+            }
+          }
+        } else if (needOrderInfo) {
+          // 如果没有订单信息，为每个需要订单信息的字段添加"暂无"
+          for (const field of fieldsToShow) {
+            if (['orderNumber', 'contact', 'price', 'contactPhone'].includes(field)) {
+              switch (field) {
+                case 'orderNumber':
+                  contentParts.push('订单号：暂无');
+                  break;
+                case 'contact':
+                  contentParts.push('联系人：暂无');
+                  break;
+                case 'contactPhone':
+                  contentParts.push('联系方式：暂无');
+                  break;
+                case 'price':
+                  contentParts.push('价格：暂无');
+                  break;
+              }
+            }
+          }
+        }
+
+        // 如果有信息要显示，则用换行符连接；否则显示暂无信息
+        const content = contentParts.length > 0 ? contentParts.join('\n') : '暂无信息';
+        this.tooltipContent = content;
+        this.cageInfoCache.set(cacheKey, content);
+      } catch (error) {
+        console.error('获取信息失败:', error);
+        this.tooltipContent = '获取信息失败';
+      } finally {
+        this.loadingTooltip = false;
+      }
+    },
+
+    handleCellLeave() {
+      this.loadingTooltip = false;
+      this.hoveredCell = null;
+      this.tooltipContent = '';
+      this.tooltipVisible = false;
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -1569,6 +1680,12 @@ export default {
       this.currentCageId = null;
       this.cleanedCages = []; // 重置已清理的笼子列表
     },
+  },
+  computed: {
+    // 修改计算属性，添加price字段
+    shouldShowTooltip() {
+      return this.cageFields.some(field => ['cageName', 'orderNumber', 'contact', 'price'].includes(field));
+    }
   },
 };
 </script>
@@ -1588,7 +1705,7 @@ export default {
   /* 浅灰色 */
 }
 
-.el-table tbody tr:hover > td {
+.el-table tbody tr:hover>td {
   background: #f9f9f9 !important;
 }
 
@@ -1625,7 +1742,7 @@ export default {
 }
 
 /* 确保按钮组之间有适当的间距 */
-.button-group + .button-group {
+.button-group+.button-group {
   margin-top: 8px;
 }
 
@@ -1657,7 +1774,7 @@ export default {
 }
 
 /* 确保选中状态的优先级高于hover效果 */
-.el-table tbody tr:hover > td.selected-cell {
+.el-table tbody tr:hover>td.selected-cell {
   background-color: #ff4444 !important;
   animation: flash 1s infinite !important;
 }
@@ -1691,7 +1808,7 @@ export default {
 }
 
 /* 确保当前选中状态的优先级高于其他效果 */
-.el-table tbody tr:hover > td.current-selected-cell {
+.el-table tbody tr:hover>td.current-selected-cell {
   background-color: #ff4444 !important;
   animation: flash 1s infinite !important;
 }
@@ -1709,8 +1826,8 @@ export default {
 }
 
 /* 确保已清理或预留状态的优先级高于hover效果 */
-.el-table tbody tr:hover > td.cleaned-cell,
-.el-table tbody tr:hover > td.reserved-cell {
+.el-table tbody tr:hover>td.cleaned-cell,
+.el-table tbody tr:hover>td.reserved-cell {
   background-color: #409eff !important;
 }
 
@@ -1971,7 +2088,7 @@ export default {
 }
 
 /* 确保锁定状态的优先级高于hover效果 */
-.el-table tbody tr:hover > td.locked-cell {
+.el-table tbody tr:hover>td.locked-cell {
   background-color: #909399 !important;
 }
 
@@ -1981,5 +2098,67 @@ export default {
 
 .color-block.locked-cell {
   background-color: #909399;
+}
+
+/* 添加新的样式 */
+.cell-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cage-info-tooltip {
+  max-width: 300px !important;
+  padding: 12px !important;
+  background: white !important;
+  border: 1px solid #e4e7ed !important;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1) !important;
+  white-space: pre-line !important;
+  line-height: 1.5 !important;
+}
+
+.cage-info {
+  font-size: 14px;
+  color: #606266;
+}
+
+.cage-info-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.cage-info-item {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+}
+
+.cage-info-item .label {
+  color: #909399;
+  margin-right: 8px;
+  min-width: 70px;
+}
+
+.cage-info-item .value {
+  color: #303133;
+  font-weight: 500;
+}
+
+/* 添加加载动画 */
+@keyframes loading-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-indicator {
+  animation: loading-rotate 1s linear infinite;
+  margin-right: 5px;
 }
 </style>

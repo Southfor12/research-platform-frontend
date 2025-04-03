@@ -14,17 +14,22 @@ export function getCageId(params) {
     return request({
         url: '/animal/fac/cage/getcageid',
         method: 'get',
-        params
+        params: {
+            ...params,
+            hideSuccess: params.hideSuccess
+        }
     })
 }
-
 
 //根据笼子id查询笼盒id
 export function getCageBoxId(params) {
     return request({
         url: '/animal/fac/cagebox/getcagebox',
         method: 'get',
-        params
+        params: {
+            ...params,
+            hideSuccess: params.hideSuccess
+        }
     })
 }
 
@@ -142,6 +147,15 @@ export function unlockCage(params) {
     return request({
         url: '/animal/fac/cage/unlock',
         method: 'put',
+        params
+    })
+}
+
+//根据笼盒id查询信息    
+export function getCageBoxInfo(params) {
+    return request({
+        url: '/animal/fac/cagebox/getanimal',
+        method: 'get',
         params
     })
 }

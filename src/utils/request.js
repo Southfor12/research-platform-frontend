@@ -89,7 +89,6 @@ service.interceptors.response.use(
    * You can also judge the status by HTTP Status Code
    */
   response => {
-
     var res = response.data;
     //取消解密 20210611, //开放解密 20210902
     if (typeof res == 'string') {
@@ -112,7 +111,6 @@ service.interceptors.response.use(
       res = code;
     }
 
-
     const clientType = localStorage.getItem('client-type')
     // if the custom status is not 1, it is judged as an error.
     if (res.status === 400 || res.status === 401) {
@@ -126,32 +124,22 @@ service.interceptors.response.use(
           path: "/login"
         });
       }
-      // location.reload()
-      // MessageBox.alert('登录已退出，请重新登录', '提示', {
-      //   confirmButtonText: '确定',
-      //   type: 'info'
-      // }).then(() => {
-      //   store.dispatch('user/resetToken').then(() => {
-      //     location.reload()
-      //   })
-      // }).catch(() => {
-      //   store.dispatch('user/resetToken').then(() => {
-      //     location.reload()
-      //   })
-      // })
     } else if (res.status === 1) {
-      if (clientType === 'h5') {
-        Notify({
-          type: 'success',
-          message: res.msg,
-          duration: 2 * 1000
-        });
-      } else {
-        Message({
-          message: res.msg,
-          type: 'success',
-          duration: 2 * 1000
-        });
+      // 全局关闭success提示，除非特别指定需要显示
+      if (response.config.params && response.config.params.showSuccess) {
+        if (clientType === 'h5') {
+          Notify({
+            type: 'success',
+            message: res.msg,
+            duration: 2 * 1000
+          });
+        } else {
+          Message({
+            message: res.msg,
+            type: 'success',
+            duration: 2 * 1000
+          });
+        }
       }
     } else if (res.status === 200) { // 什么都不提示，对用户无感
     } else if (res.status === 801) { //多个地方登录，被迫下线
