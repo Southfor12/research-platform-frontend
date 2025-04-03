@@ -107,8 +107,12 @@
             <el-button type="primary" size="small" icon="el-icon-plus" @click="handleMoveCage"
               >移动笼盒</el-button
             >
-            <el-button type="primary" size="small" icon="el-icon-edit">修改状态</el-button>
-            <el-button type="primary" size="small" icon="el-icon-document">订单信息</el-button>
+            <el-button type="primary" size="small" icon="el-icon-edit" @click="handleUpdateStatus"
+              >修改状态</el-button
+            >
+            <el-button type="primary" size="small" icon="el-icon-document" @click="handleOrderInfo"
+              >订单信息</el-button
+            >
             <el-button type="primary" size="small" icon="el-icon-search">清空订单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印标签</el-button>
             <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact"
@@ -121,9 +125,15 @@
 
           <!-- 功能按钮组 - 第二行 -->
           <div class="button-group">
-            <el-button type="primary" size="small" icon="el-icon-upload2">导入笼盒</el-button>
-            <el-button type="primary" size="small" icon="el-icon-setting">笼位锁定</el-button>
-            <el-button type="primary" size="small" icon="el-icon-close">取消锁定</el-button>
+            <el-button type="primary" size="small" icon="el-icon-upload2" @click="handleImportCage"
+              >导入笼盒</el-button
+            >
+            <el-button type="primary" size="small" icon="el-icon-setting" @click="handleLockCage"
+              >笼位锁定</el-button
+            >
+            <el-button type="primary" size="small" icon="el-icon-close" @click="handleUnlockCage"
+              >取消锁定</el-button
+            >
             <el-button type="primary" size="small" icon="el-icon-share">笼位分配</el-button>
             <el-button type="primary" size="small" icon="el-icon-close">取消分配</el-button>
             <el-button type="primary" size="small" icon="el-icon-user">笼位授权</el-button>
@@ -155,6 +165,10 @@
               <div class="legend-item">
                 <div class="color-block default-cell"></div>
                 <span>未使用</span>
+              </div>
+              <div class="legend-item">
+                <div class="color-block locked-cell"></div>
+                <span>已锁定</span>
               </div>
             </div>
           </div>
@@ -201,6 +215,60 @@
             </div>
           </el-dialog>
 
+          <!-- 导入笼盒弹窗 -->
+          <el-dialog
+            title="导入笼盒"
+            :visible.sync="importCageDialogVisible"
+            width="500px"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            :show-close="false"
+          >
+            <div class="import-cage-content">
+              <el-form :model="importCageForm" ref="importCageForm" label-width="100px">
+                <el-form-item label="笼盒名称" prop="name">
+                  <el-input v-model="importCageForm.name" placeholder="请输入笼盒名称"></el-input>
+                </el-form-item>
+                <el-form-item label="笼盒类型" prop="boxType">
+                  <el-select
+                    v-model="importCageForm.boxType"
+                    placeholder="请选择笼盒类型"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in boxTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="订单编号" prop="orderId">
+                  <el-input v-model="importCageForm.orderId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="客户ID" prop="customerId">
+                  <el-input v-model="importCageForm.customerId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="客户联系人" prop="customerContact">
+                  <el-input v-model="importCageForm.customerContact" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="价格" prop="price">
+                  <el-input-number
+                    v-model="importCageForm.price"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  ></el-input-number>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="importCageDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="submitImportCage">确 定</el-button>
+            </div>
+          </el-dialog>
+
           <!-- 移动笼盒弹窗 -->
           <el-dialog
             title="移动笼盒"
@@ -214,9 +282,13 @@
               <div class="source-cage">
                 <h4>源笼盒信息</h4>
                 <div class="cage-info">
+                  <p>笼盒名称：{{ sourceCageBoxInfo ? sourceCageBoxInfo.name : '-' }}</p>
+                  <p>笼盒ID：{{ sourceCageBoxInfo ? sourceCageBoxInfo.id : '-' }}</p>
+                  <p>笼盒类型：{{ sourceCageBoxInfo ? sourceCageBoxInfo.box_type : '-' }}</p>
                   <p>位置：{{ currentSelectedCage.position }}</p>
                   <p>笼架：{{ selectedRack ? selectedRack.label : '' }}</p>
-                  <p>动物数量：{{ getCageAnimalCount(currentSelectedCage.numbers) }}</p>
+                  <p>动物数量：{{ sourceCageBoxInfo ? sourceCageBoxInfo.animal_count : 0 }}</p>
+                  <p>价格：{{ sourceCageBoxInfo ? sourceCageBoxInfo.price : 0 }}</p>
                 </div>
               </div>
               <div class="target-cage">
@@ -256,6 +328,116 @@
               >
             </div>
           </el-dialog>
+
+          <!-- 修改状态弹窗 -->
+          <el-dialog
+            title="修改状态"
+            :visible.sync="statusDialogVisible"
+            width="500px"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            :show-close="false"
+          >
+            <div class="status-dialog-content">
+              <el-form :model="statusForm" ref="statusForm" label-width="100px">
+                <el-form-item label="动物状态" prop="animalStatus">
+                  <el-select
+                    v-model="statusForm.animalStatus"
+                    placeholder="请选择动物状态"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in animalStatusList"
+                      :key="item.id"
+                      :label="item.status"
+                      :value="item.status"
+                    >
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="实验状态" prop="experimentalStatus">
+                  <el-select
+                    v-model="statusForm.experimentalStatus"
+                    placeholder="请选择实验状态"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in experimentalStatusOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="statusDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="confirmUpdateStatus">确 定</el-button>
+            </div>
+          </el-dialog>
+
+          <!-- 订单信息弹窗 -->
+          <el-dialog
+            title="订单信息"
+            :visible.sync="orderInfoDialogVisible"
+            width="500px"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            custom-class="order-info-dialog"
+            :show-close="false"
+          >
+            <div class="order-info-content">
+              <el-form :model="orderInfo" ref="orderInfoForm" label-width="120px">
+                <div class="info-section">
+                  <el-form-item label="饲养订单" prop="care_order_id">
+                    <el-input
+                      v-model="orderInfo.care_order_id"
+                      placeholder="请输入饲养订单号"
+                    ></el-input>
+                  </el-form-item>
+                  <el-form-item label="技术服务订单" prop="work_order_id">
+                    <el-select
+                      v-model="orderInfo.work_order_id"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      placeholder="请输入技术服务订单号"
+                      style="width: 100%"
+                    >
+                      <el-option
+                        v-for="item in orderInfo.work_order_id"
+                        :key="item"
+                        :label="item"
+                        :value="item"
+                      >
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="客户联系人" prop="user">
+                    <el-input v-model="orderInfo.user" placeholder="请输入客户联系人"></el-input>
+                  </el-form-item>
+                  <el-form-item label="价格" prop="price">
+                    <el-input-number
+                      v-model="orderInfo.price"
+                      :precision="2"
+                      :step="0.1"
+                      :min="0"
+                      style="width: 100%"
+                    >
+                      <template slot="append">元/笼/天</template>
+                    </el-input-number>
+                  </el-form-item>
+                </div>
+              </el-form>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="orderInfoDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="saveOrderInfo">保 存</el-button>
+            </div>
+          </el-dialog>
         </div>
       </el-main>
     </el-container>
@@ -280,7 +462,16 @@ import {
   getUserById,
   allUsers,
   moveCage,
+  getCageBoxId,
+  getOrderInfo,
+  // getOrderDetail,
+  importNewCage,
+  updateAnimalStatus,
+  updateOrderInfo,
+  lockCage,
+  unlockCage,
 } from '@/api/ani_manage';
+import { getAnimalStatus } from '@/api/ani_setting';
 
 export default {
   components: {
@@ -288,6 +479,7 @@ export default {
   },
   data() {
     return {
+      lockedCages: [], // 存储已锁定的笼位ID
       activecage: [], //已经被选择过的笼架
       cageInfoList: [], // 存储笼子的详细信息
       count: 0,
@@ -295,7 +487,7 @@ export default {
       columns: ['A', 'B', 'C', 'D', 'E'], // 列名
       tableData: [], // 表格数据
       activeCells: [], // 选择的
-      activeCells_: [], // 已选择的
+      activeCells_: [], // 已选择的            +
 
       selectionMode: [], // 选择模式默认全选
       cageFields: [], // 笼子字段默认全不选
@@ -364,6 +556,45 @@ export default {
         id: null,
       },
       targetRack: null,
+
+      sourceCageBoxInfo: null, // 添加源笼盒详细信息
+
+      // 导入笼盒相关数据
+      importCageDialogVisible: false, // 导入笼盒弹窗显示状态
+      importCageForm: {
+        name: '', // 笼盒名称
+        boxType: '', // 笼盒类型
+        orderId: '', // 订单编号
+        customerId: '', // 客户ID
+        customerContact: '', // 客户联系人
+        price: 0, // 价格
+      },
+      boxTypeOptions: [
+        { label: '普通笼盒', value: '普通笼盒' },
+        { label: '哨兵笼盒', value: '哨兵笼盒' },
+        { label: '压测笼盒', value: '压测笼盒' },
+      ],
+
+      // 修改状态相关数据
+      statusDialogVisible: false, // 修改状态弹窗显示状态
+      animalStatusList: [], // 动物状态列表
+      experimentalStatusOptions: [
+        { label: '准备实验', value: '准备实验' },
+        { label: '检疫', value: '检疫' },
+        { label: '实验结束', value: '实验结束' },
+      ],
+      statusForm: {
+        animalStatus: '', // 动物状态
+        experimentalStatus: '', // 实验状态
+      },
+
+      orderInfoDialogVisible: false, // 订单信息弹窗显示状态
+      orderInfo: {
+        care_order_id: '',
+        work_order_id: [],
+        user: '',
+        price: 0,
+      },
     };
   },
   created() {
@@ -435,16 +666,18 @@ export default {
       );
 
       // 检查是否是已清理的笼位
-      const isCleaned =
-        this.cleanedCages &&
-        this.cleanedCages.some((cage) => cage.row === row.row && cage.column === colKey);
+      const cageInfo = this.cageInfoList.find((cage) => cage.number === cellNumber);
+      const isCleaned = cageInfo && cageInfo.animal_count === 0 && cageInfo.is_reserved;
 
       // 检查是否是已预留的笼位
-      const cageInfo = this.cageInfoList.find((cage) => cage.number === cellNumber);
       const isReserved = cageInfo && cageInfo.animal_count === 0 && cageInfo.is_reserved;
+
+      // 检查是否是已锁定的笼位
+      const isLocked = cageInfo && this.lockedCages.includes(cageInfo.id);
 
       // 返回对应的样式类名
       if (isCurrentSelected) return 'current-selected-cell';
+      if (isLocked) return 'locked-cell';
       if (isCleaned) return 'cleaned-cell';
       if (isReserved) return 'reserved-cell';
       return isActive ? 'highlight' : 'default-cell';
@@ -686,7 +919,83 @@ export default {
       }
     },
 
-    // 处理清理笼架
+    // 处理导入笼盒按钮点击
+    async handleImportCage() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要导入的笼位');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        // 获取订单信息
+        const orderRes = await getOrderInfo({
+          cage_id: this.currentCageId,
+        });
+
+        if (orderRes.data) {
+          this.importCageForm.orderId = orderRes.data.care_order_id;
+          this.importCageForm.customerId = orderRes.data.user_id;
+          this.importCageForm.customerContact = orderRes.data.user;
+          this.importCageForm.price = orderRes.data.price;
+        }
+
+        // 重置其他表单字段
+        this.importCageForm.name = '';
+        this.importCageForm.boxType = '';
+
+        // 显示弹窗
+        this.importCageDialogVisible = true;
+      } catch (error) {
+        console.error('获取订单信息失败:', error);
+        this.$message.error('获取订单信息失败');
+      }
+    },
+
+    // 提交导入笼盒
+    async submitImportCage() {
+      try {
+        // 表单验证
+        if (!this.importCageForm.name) {
+          this.$message.warning('请输入笼盒名称');
+          return;
+        }
+        if (!this.importCageForm.boxType) {
+          this.$message.warning('请选择笼盒类型');
+          return;
+        }
+
+        // 调用导入笼盒接口
+        const response = await importNewCage({
+          cage_id: this.currentCageId,
+          box_type: this.importCageForm.boxType,
+          care_order_id: parseInt(this.importCageForm.orderId),
+          user_id: 3, // 从订单信息中获取的用户ID
+          name: this.importCageForm.name,
+          price: this.importCageForm.price,
+        });
+
+        if (response.status === 1) {
+          this.$message.success(response.msg || '导入笼盒成功');
+          this.importCageDialogVisible = false;
+
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '导入笼盒失败');
+        }
+      } catch (error) {
+        console.error('导入笼盒失败:', error);
+        this.$message.error('导入笼盒失败');
+      }
+    },
+
     async handleCleanRack() {
       if (!this.currentSelectedCage.isSelected) {
         this.$message.warning('请先选择要清理的笼子');
@@ -699,10 +1008,22 @@ export default {
       }
 
       try {
-        await cleanRack({
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
           cage_id: this.currentCageId,
         });
-        this.$message.success('清理笼子成功');
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 使用笼盒ID调用清理接口
+        await cleanRack({
+          cage_box_id: cageBoxRes.data.id,
+        });
+
+        this.$message.success('清理笼盒成功');
 
         // 刷新笼架数据
         if (this.selectedRack && this.selectedRack.id) {
@@ -750,15 +1071,24 @@ export default {
       }
 
       try {
-        // 获取当前笼子的所有者信息
-        const cageInfo = this.cageInfoList.find((cage) => cage.id === this.currentCageId);
-        if (!cageInfo || !cageInfo.user_id) {
-          this.$message.warning('未找到笼子所有者信息');
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 直接使用笼盒信息中的用户ID
+        if (!cageBoxRes.data.user_id) {
+          this.$message.warning('未找到笼盒所有者信息');
           return;
         }
 
         // 获取当前联系人信息
-        const userRes = await getUserById({ id: cageInfo.user_id });
+        const userRes = await getUserById({ id: cageBoxRes.data.user_id });
         if (userRes.status === 200 && userRes.data) {
           this.currentContactName = userRes.data.name;
           this.currentContactId = userRes.data.id;
@@ -784,22 +1114,6 @@ export default {
       }
     },
 
-    // 远程搜索联系人
-    remoteSearch(query) {
-      if (query !== '') {
-        this.loading = true;
-        // 这里可以添加远程搜索逻辑，目前使用本地过滤
-        setTimeout(() => {
-          this.loading = false;
-          this.contactOptions = this.contactOptions.filter((item) => {
-            return item.name.toLowerCase().includes(query.toLowerCase());
-          });
-        }, 200);
-      } else {
-        this.contactOptions = this.contactOptions;
-      }
-    },
-
     // 确认变更联系人
     async confirmChangeContact() {
       if (!this.selectedContactId) {
@@ -808,8 +1122,19 @@ export default {
       }
 
       try {
-        await updateCageContact({
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
           cage_id: this.currentCageId,
+        });
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 使用笼盒ID调用更新联系人接口
+        await updateCageContact({
+          cage_box_id: cageBoxRes.data.id,
           user_id: this.selectedContactId,
         });
 
@@ -825,9 +1150,119 @@ export default {
         this.$message.error('变更联系人失败');
       }
     },
+    // 处理修改状态按钮点击
+    async handleUpdateStatus() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要修改状态的笼子');
+        return;
+      }
 
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        console.log('开始获取笼盒信息...'); // 添加日志
+        // 获取笼盒信息
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+        console.log('笼盒信息响应:', cageBoxRes); // 添加日志
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        console.log('开始获取动物状态列表...'); // 添加日志
+        try {
+          // 获取动物状态列表
+          const statusRes = await getAnimalStatus();
+          console.log('动物状态列表响应:', statusRes); // 添加日志
+
+          if (!statusRes) {
+            console.error('getAnimalStatus 返回为空');
+            this.$message.error('获取动物状态列表失败: 返回数据为空');
+            return;
+          }
+
+          if (statusRes.status === 1 && statusRes.data) {
+            this.animalStatusList = statusRes.data;
+            console.log('设置动物状态列表成功:', this.animalStatusList); // 添加日志
+          } else {
+            console.error('获取动物状态列表失败:', statusRes);
+            this.$message.warning('获取动物状态列表失败: ' + (statusRes.msg || '未知错误'));
+            return;
+          }
+        } catch (statusError) {
+          console.error('获取动物状态列表出错:', statusError);
+          this.$message.error('获取动物状态列表失败: ' + (statusError.message || '未知错误'));
+          return;
+        }
+
+        // 重置表单
+        this.statusForm = {
+          animalStatus: '',
+          experimentalStatus: '',
+        };
+
+        // 显示弹窗
+        this.statusDialogVisible = true;
+      } catch (error) {
+        console.error('整体处理失败:', error);
+        this.$message.error('获取信息失败: ' + (error.message || '未知错误'));
+      }
+    },
+
+    // 确认修改状态
+    async confirmUpdateStatus() {
+      if (!this.statusForm.animalStatus) {
+        this.$message.warning('请选择动物状态');
+        return;
+      }
+      if (!this.statusForm.experimentalStatus) {
+        this.$message.warning('请选择实验状态');
+        return;
+      }
+
+      try {
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+        console.log('笼盒ID:', cageBoxRes.data.id);
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 调用更新状态接口
+        const response = await updateAnimalStatus({
+          cage_box_id: cageBoxRes.data.id,
+          status: this.statusForm.animalStatus,
+          experimental_status: this.statusForm.experimentalStatus,
+        });
+
+        if (response.status === 1) {
+          this.$message.success(response.msg || '修改状态成功');
+          this.statusDialogVisible = false;
+
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '修改状态失败');
+        }
+      } catch (error) {
+        console.error('修改状态失败:', error);
+        this.$message.error('修改状态失败');
+      }
+    },
     // 处理移动笼盒按钮点击
-    handleMoveCage() {
+    async handleMoveCage() {
       if (!this.currentSelectedCage.isSelected) {
         this.$message.warning('请先选择要移动的笼子');
         return;
@@ -838,7 +1273,24 @@ export default {
         return;
       }
 
-      this.moveCageDialogVisible = true;
+      try {
+        // 获取源笼盒详细信息
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+
+        if (cageBoxRes.status === 1 && cageBoxRes.data) {
+          this.sourceCageBoxInfo = cageBoxRes.data;
+        } else {
+          this.$message.warning('获取源笼盒信息失败');
+          return;
+        }
+
+        this.moveCageDialogVisible = true;
+      } catch (error) {
+        console.error('获取源笼盒信息失败:', error);
+        this.$message.error('获取源笼盒信息失败');
+      }
     },
 
     // 处理移动笼盒对话框关闭
@@ -852,6 +1304,7 @@ export default {
         id: null,
       };
       this.targetRack = null;
+      this.sourceCageBoxInfo = null;
       this.moveCageDialogVisible = false;
     },
 
@@ -928,7 +1381,6 @@ export default {
       if (isOccupied) return 'occupied-cell';
       return 'available-cell';
     },
-
     // 确认移动笼盒
     async confirmMoveCage() {
       if (!this.targetCage.id) {
@@ -938,7 +1390,7 @@ export default {
 
       try {
         await moveCage({
-          cage_id: this.currentCageId,
+          cage_box_id: this.sourceCageBoxInfo.id,
           newcage_id: this.targetCage.id,
         });
 
@@ -963,6 +1415,143 @@ export default {
       } catch (error) {
         console.error('移动笼盒失败:', error);
         this.$message.error('移动笼盒失败');
+      }
+    },
+    // 处理订单信息按钮点击
+    async handleOrderInfo() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        // 获取订单信息
+        const response = await getOrderInfo({
+          cage_id: this.currentCageId,
+        });
+
+        if (response.status === 1 && response.data) {
+          // 确保 work_order_id 是数组
+          this.orderInfo = {
+            ...response.data,
+            work_order_id: Array.isArray(response.data.work_order_id)
+              ? response.data.work_order_id
+              : response.data.work_order_id
+              ? [response.data.work_order_id]
+              : [],
+          };
+          this.orderInfoDialogVisible = true;
+        } else {
+          // 如果没有订单信息，初始化空的表单
+          this.orderInfo = {
+            care_order_id: '',
+            work_order_id: [],
+            user: '',
+            price: 0,
+          };
+          this.orderInfoDialogVisible = true;
+        }
+      } catch (error) {
+        console.error('获取订单信息失败:', error);
+        this.$message.error('获取订单信息失败');
+      }
+    },
+    async saveOrderInfo() {
+      try {
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 调用更新订单信息的接口
+        const response = await updateOrderInfo({
+          cage_box_id: cageBoxRes.data.id,
+          care_order_id: this.orderInfo.care_order_id,
+          work_order_id: this.orderInfo.work_order_id,
+          user: this.orderInfo.user,
+          price: this.orderInfo.price,
+        });
+
+        if (response.status === 1) {
+          this.$message.success('保存订单信息成功');
+          this.orderInfoDialogVisible = false;
+        } else {
+          this.$message.error(response.msg || '保存订单信息失败');
+        }
+      } catch (error) {
+        console.error('保存订单信息失败:', error);
+        this.$message.error('保存订单信息失败');
+      }
+    },
+    // 处理笼位锁定
+    async handleLockCage() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要锁定的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        const response = await lockCage({
+          cage_id: this.currentCageId
+        });
+
+        if (response.status === 1) {
+          this.$message.success('笼位锁定成功');
+          // 将锁定的笼位ID添加到数组中
+          if (!this.lockedCages.includes(this.currentCageId)) {
+            this.lockedCages.push(this.currentCageId);
+          }
+        } else {
+          this.$message.error(response.msg || '笼位锁定失败');
+        }
+      } catch (error) {
+        console.error('笼位锁定失败:', error);
+        this.$message.error('笼位锁定失败');
+      }
+    },
+
+    // 处理笼位解锁
+    async handleUnlockCage() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要解锁的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        const response = await unlockCage({
+          cage_id: this.currentCageId
+        });
+
+        if (response.status === 1) {
+          this.$message.success('笼位解锁成功');
+          // 从数组中移除解锁的笼位ID
+          this.lockedCages = this.lockedCages.filter(id => id !== this.currentCageId);
+        } else {
+          this.$message.error(response.msg || '笼位解锁失败');
+        }
+      } catch (error) {
+        console.error('笼位解锁失败:', error);
+        this.$message.error('笼位解锁失败');
       }
     },
   },
@@ -1300,5 +1889,97 @@ export default {
 
 .available-cell:hover {
   background-color: #ecf5ff !important;
+}
+
+/* 订单信息弹窗样式 */
+.order-info-dialog .el-dialog__header {
+  padding: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.order-info-dialog .el-dialog__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.order-info-content {
+  padding: 30px 20px;
+}
+
+.order-info-content .info-section {
+  background-color: #f8f9fb;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.order-info-content .info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #e4e7ed;
+}
+
+.order-info-content .info-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.order-info-content .info-label {
+  width: 120px;
+  color: #909399;
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.order-info-content .info-value {
+  flex: 1;
+  color: #303133;
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.order-info-content .info-value.price {
+  color: #f56c6c;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.order-info-content .info-value.price .unit {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
+}
+
+.order-info-dialog .dialog-footer {
+  padding: 10px 20px 20px;
+  text-align: right;
+}
+
+.order-info-dialog .dialog-footer .el-button {
+  padding: 9px 20px;
+}
+
+/* 锁定笼位样式 */
+.locked-cell {
+  background-color: #909399 !important;
+  color: white !important;
+}
+
+/* 确保锁定状态的优先级高于hover效果 */
+.el-table tbody tr:hover > td.locked-cell {
+  background-color: #909399 !important;
+}
+
+.el-table td.locked-cell {
+  background-color: #909399 !important;
+}
+
+.color-block.locked-cell {
+  background-color: #909399;
 }
 </style>
