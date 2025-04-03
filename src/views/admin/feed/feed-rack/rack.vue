@@ -88,11 +88,12 @@
                   <div
                     @mouseenter="handleCellHover(scope.row, col)"
                     @mouseleave="handleCellLeave"
-                    class="cell-content">
+                    class="cell-content"
+                    :class="{ 'has-cage': hasCage(scope.row.row, col) }">
                     {{ scope.row[col] }}
                   </div>
                 </el-tooltip>
-                <span v-else>{{ scope.row[col] }}</span>
+                <span v-else :class="{ 'has-cage': hasCage(scope.row.row, col) }">{{ scope.row[col] }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -1665,6 +1666,11 @@ export default {
       this.tooltipContent = '';
       this.tooltipVisible = false;
     },
+    // 添加新方法：检查笼位是否存在笼盒
+    hasCage(row, col) {
+      const numbers = (row - 1) * this.columns.length + (col.charCodeAt(0) - 'A'.charCodeAt(0));
+      return this.cageInfoList.some(cage => cage.number === numbers && cage.animal_count > 0);
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -2160,5 +2166,62 @@ export default {
 .loading-indicator {
   animation: loading-rotate 1s linear infinite;
   margin-right: 5px;
+}
+
+.has-cage {
+  color: #E74C3C !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.5px;
+  position: relative;
+  display: inline-block;
+}
+
+.has-cage:hover {
+  color: #C0392B !important;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+.el-table td .has-cage {
+  color: #E74C3C !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.el-table tbody tr:hover>td .has-cage {
+  color: #C0392B !important;
+}
+
+.has-cage::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: #E74C3C;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.has-cage:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.el-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
 }
 </style>
