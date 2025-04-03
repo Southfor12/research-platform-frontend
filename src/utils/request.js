@@ -140,19 +140,7 @@ service.interceptors.response.use(
       //   })
       // })
     } else if (res.status === 1) {
-      if (clientType === 'h5') {
-        Notify({
-          type: 'success',
-          message: res.msg,
-          duration: 2 * 1000
-        });
-      } else {
-        Message({
-          message: res.msg,
-          type: 'success',
-          duration: 2 * 1000
-        });
-      }
+      // 移除成功提示
     } else if (res.status === 200) { // 什么都不提示，对用户无感
     } else if (res.status === 801) { //多个地方登录，被迫下线
       MessageBox.alert(res.msg, '提示', {

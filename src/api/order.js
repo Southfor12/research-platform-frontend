@@ -309,3 +309,12 @@ export function addCageOrder(params) {
     data: params
   });
 }
+
+//笼子预约
+export function addCageOrder2(data) { 
+  return request({
+    url: '/animal/ord/cagebooking',
+    method: 'post',
+    data: data
+  });
+}
