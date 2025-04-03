@@ -159,3 +159,39 @@ export function getCageBoxInfo(params) {
         params
     })
 }
+
+//更新笼盒的信息
+export function updateCageBoxInfo(params) {
+    return request({
+        url: '/animal/fac/cagebox/updatacagebox',
+        method: 'put',
+        params
+    })
+}
+
+//饲养异常  
+export function feedAbnormal(params) {
+    return request({
+        url: '/animal/fac/cage/insertfeedabnormality',
+        method: 'post',
+        params
+    })
+}
+
+//笼位授权
+export function cageAuthorization(params) {
+    return request({
+        url: '/animal/fac/cage/changeuser',
+        method: 'put',
+        params
+    })
+}
+
+//取消授权
+export function cancelAuthorization(params) {
+    return request({
+        url: '/animal/fac/cage/cancelreserved',
+        method: 'put',
+        params
+    })
+}

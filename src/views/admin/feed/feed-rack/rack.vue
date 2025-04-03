@@ -101,14 +101,14 @@
           <!-- 功能按钮组 - 第一行 -->
           <div class="button-group">
             <el-button type="primary" size="small" icon="el-icon-delete" @click="handleCleanRack">清理笼盒</el-button>
-            <el-button type="primary" size="small" icon="el-icon-edit">编辑笼盒</el-button>
+            <el-button type="primary" size="small" icon="el-icon-edit" @click="handleEditCage">编辑笼盒</el-button>
             <el-button type="primary" size="small" icon="el-icon-plus" @click="handleMoveCage">移动笼盒</el-button>
             <el-button type="primary" size="small" icon="el-icon-edit" @click="handleUpdateStatus">修改状态</el-button>
             <el-button type="primary" size="small" icon="el-icon-document" @click="handleOrderInfo">订单信息</el-button>
             <el-button type="primary" size="small" icon="el-icon-search">清空订单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印标签</el-button>
             <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact">变更联系人</el-button>
-            <el-button type="primary" size="small" icon="el-icon-warning">饲养异常</el-button>
+            <el-button type="primary" size="small" icon="el-icon-warning" @click="handleAbnormal">饲养异常</el-button>
             <el-button type="primary" size="small" icon="el-icon-setting">提交工单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">重打标签</el-button>
           </div>
@@ -120,11 +120,9 @@
             <el-button type="primary" size="small" icon="el-icon-close" @click="handleUnlockCage">取消锁定</el-button>
             <el-button type="primary" size="small" icon="el-icon-share">笼位分配</el-button>
             <el-button type="primary" size="small" icon="el-icon-close">取消分配</el-button>
-            <el-button type="primary" size="small" icon="el-icon-user">笼位授权</el-button>
-            <el-button type="primary" size="small" icon="el-icon-close">取消授权</el-button>
+            <el-button type="primary" size="small" icon="el-icon-user" @click="handleAuthorization">笼位授权</el-button>
+            <el-button type="primary" size="small" icon="el-icon-close" @click="handleCancelAuthorization">取消授权</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印笼架</el-button>
-            <el-button type="primary" size="small" icon="el-icon-user">笼位授权</el-button>
-            <el-button type="primary" size="small" icon="el-icon-close">取消授权</el-button>
           </div>
 
           <!-- 色卡提示区域 -->
@@ -317,6 +315,88 @@
               <el-button type="primary" @click="saveOrderInfo">保 存</el-button>
             </div>
           </el-dialog>
+
+          <!-- 编辑笼盒弹窗 -->
+          <el-dialog title="编辑笼盒" :visible.sync="editCageDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
+            <div class="edit-cage-content">
+              <el-form :model="editCageForm" ref="editCageForm" label-width="100px">
+                <el-form-item label="笼盒名称" prop="name">
+                  <el-input v-model="editCageForm.name" placeholder="请输入新的笼盒名称"></el-input>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="editCageDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="submitEditCage">确 定</el-button>
+            </div>
+          </el-dialog>
+
+          <!-- 饲养异常弹窗 -->
+          <el-dialog title="饲养异常" :visible.sync="abnormalDialogVisible" width="600px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
+            <div class="abnormal-content">
+              <el-form :model="abnormalForm" ref="abnormalForm" label-width="100px">
+                <el-form-item label="位置" prop="position">
+                  <el-input v-model="abnormalForm.position" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="异常类型" prop="abnormality">
+                  <el-select v-model="abnormalForm.abnormality" placeholder="请选择异常类型" style="width: 100%">
+                    <el-option label="饲养异常" value="饲养异常"></el-option>
+                    <el-option label="繁殖异常" value="繁殖异常"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="图片" prop="images">
+                  <el-upload
+                    class="upload-demo"
+                    action="#"
+                    :auto-upload="false"
+                    :on-change="handleFileChange"
+                    :file-list="fileList"
+                    multiple
+                    :limit="5">
+                    <el-button size="small" type="primary">点击上传</el-button>
+                    <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过20MB</div>
+                  </el-upload>
+                </el-form-item>
+                <el-form-item label="描述" prop="description">
+                  <el-input
+                    type="textarea"
+                    :rows="4"
+                    placeholder="请输入异常情况描述"
+                    v-model="abnormalForm.description">
+                  </el-input>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="abnormalDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="submitAbnormal">提 交</el-button>
+            </div>
+          </el-dialog>
+
+          <!-- 笼位授权弹窗 -->
+          <el-dialog title="笼位授权" :visible.sync="authDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
+            <div class="auth-dialog-content">
+              <div class="cage-info">
+                <span class="label">当前笼位：</span>
+                <span class="value">{{ currentSelectedCage.position }}</span>
+              </div>
+              <div class="user-select">
+                <span class="label">选择用户：</span>
+                <el-select v-model="selectedAuthUserId" filterable remote reserve-keyword placeholder="请输入用户姓名搜索"
+                  :remote-method="remoteSearch" :loading="loading" style="width: 100%">
+                  <el-option v-for="item in contactOptions" :key="item.id" :label="item.name" :value="item.id">
+                  </el-option>
+                </el-select>
+              </div>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="authDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="confirmAuthorization">确 定</el-button>
+            </div>
+          </el-dialog>
         </div>
       </el-main>
     </el-container>
@@ -349,8 +429,12 @@ import {
   lockCage,
   unlockCage,
   getCageBoxInfo,
+  updateCageBoxInfo,
+  cageAuthorization,
+  cancelAuthorization,
 } from '@/api/ani_manage';
 import { getAnimalStatus } from '@/api/ani_setting';
+import { feedAbnormal } from '@/api/ani_manage';
 
 export default {
   components: {
@@ -480,6 +564,21 @@ export default {
       tooltipContent: '',
       cageInfoCache: new Map(), // 添加缓存
       tooltipVisible: false, // 控制tooltip显示
+
+      editCageDialogVisible: false, // 编辑笼盒弹窗显示状态
+      editCageForm: {
+        name: '', // 笼盒名称
+      },
+
+      abnormalDialogVisible: false, // 饲养异常弹窗显示状态
+      abnormalForm: {
+        position: '', // 位置信息
+        abnormality: '', // 异常类型
+        description: '', // 描述
+      },
+      fileList: [], // 文件列表
+      authDialogVisible: false, // 笼位授权弹窗显示状态
+      selectedAuthUserId: null, // 选中的授权用户ID
     };
   },
   created() {
@@ -1671,6 +1770,235 @@ export default {
       const numbers = (row - 1) * this.columns.length + (col.charCodeAt(0) - 'A'.charCodeAt(0));
       return this.cageInfoList.some(cage => cage.number === numbers && cage.animal_count > 0);
     },
+
+    // 处理编辑笼盒按钮点击
+    async handleEditCage() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要编辑的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 设置当前笼盒名称
+        this.editCageForm.name = cageBoxRes.data.name || '';
+        
+        // 显示弹窗
+        this.editCageDialogVisible = true;
+      } catch (error) {
+        console.error('获取笼盒信息失败:', error);
+        this.$message.error('获取笼盒信息失败');
+      }
+    },
+
+    // 提交编辑笼盒
+    async submitEditCage() {
+      if (!this.editCageForm.name) {
+        this.$message.warning('请输入笼盒名称');
+        return;
+      }
+
+      try {
+        // 获取笼盒ID
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 调用更新笼盒信息的接口
+        const response = await updateCageBoxInfo({
+          cage_box_id: cageBoxRes.data.id,
+          name: this.editCageForm.name,
+        });
+
+        if (response.status === 1) {
+          this.$message.success('编辑笼盒成功');
+          this.editCageDialogVisible = false;
+
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '编辑笼盒失败');
+        }
+      } catch (error) {
+        console.error('编辑笼盒失败:', error);
+        this.$message.error('编辑笼盒失败');
+      }
+    },
+
+    // 处理饲养异常按钮点击
+    handleAbnormal() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      // 设置位置信息
+      this.abnormalForm = {
+        position: this.currentSelectedCage.position,
+        abnormality: '',
+        description: '',
+      };
+      this.fileList = [];
+      this.abnormalDialogVisible = true;
+    },
+
+    // 处理文件改变
+    handleFileChange(file, fileList) {
+      this.fileList = fileList;
+    },
+
+    // 提交饲养异常
+    async submitAbnormal() {
+      if (!this.abnormalForm.abnormality) {
+        this.$message.warning('请选择异常类型');
+        return;
+      }
+
+      if (!this.abnormalForm.description) {
+        this.$message.warning('请输入异常情况描述');
+        return;
+      }
+
+      try {
+        const response = await feedAbnormal({
+          abnormality: this.abnormalForm.abnormality,
+          cage_id: this.currentCageId,
+          description: this.abnormalForm.description
+        });
+
+        if (response.status === 1) {
+          this.$message.success('提交成功');
+          this.abnormalDialogVisible = false;
+          
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '提交失败');
+        }
+      } catch (error) {
+        console.error('提交饲养异常失败:', error);
+        this.$message.error('提交失败');
+      }
+    },
+
+    // 处理笼位授权按钮点击
+    async handleAuthorization() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要授权的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        // 获取所有用户列表
+        const response = await allUsers();
+        if (response.status === 200 && response.data.users) {
+          this.contactOptions = response.data.users;
+        } else {
+          this.$message.warning('获取用户列表失败');
+          return;
+        }
+
+        this.selectedAuthUserId = null;
+        this.authDialogVisible = true;
+      } catch (error) {
+        console.error('获取用户列表失败:', error);
+        this.$message.error('获取用户列表失败');
+      }
+    },
+
+    // 确认授权
+    async confirmAuthorization() {
+      if (!this.selectedAuthUserId) {
+        this.$message.warning('请选择要授权的用户');
+        return;
+      }
+
+      try {
+        const response = await cageAuthorization({
+          cage_id: this.currentCageId,
+          user_id: this.selectedAuthUserId
+        });
+
+        if (response.status === 1) {
+          this.$message.success('笼位授权成功');
+          this.authDialogVisible = false;
+
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '笼位授权失败');
+        }
+      } catch (error) {
+        console.error('笼位授权失败:', error);
+        this.$message.error('笼位授权失败');
+      }
+    },
+
+    // 处理取消授权按钮点击
+    async handleCancelAuthorization() {
+      if (!this.currentSelectedCage.isSelected) {
+        this.$message.warning('请先选择要取消授权的笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        const response = await cancelAuthorization({
+          cage_id: this.currentCageId
+        });
+
+        if (response.status === 1) {
+          this.$message.success('取消授权成功');
+          
+          // 强制刷新页面
+          window.location.reload();
+        } else {
+          this.$message.error(response.msg || '取消授权失败');
+        }
+      } catch (error) {
+        console.error('取消授权失败:', error);
+        this.$message.error('取消授权失败');
+      }
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -2223,5 +2551,63 @@ export default {
   justify-content: center;
   height: 100%;
   width: 100%;
+}
+
+/* 编辑笼盒弹窗样式 */
+.edit-cage-content {
+  padding: 20px;
+}
+
+.edit-cage-content .el-form-item {
+  margin-bottom: 20px;
+}
+
+.edit-cage-content .el-input {
+  width: 100%;
+}
+
+/* 饲养异常弹窗样式 */
+.abnormal-content {
+  padding: 20px;
+}
+
+.abnormal-content .el-form-item {
+  margin-bottom: 20px;
+}
+
+.abnormal-content .el-textarea {
+  width: 100%;
+}
+
+.upload-demo {
+  margin-bottom: 10px;
+}
+
+.el-upload__tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 5px;
+}
+
+/* 笼位授权弹窗样式 */
+.auth-dialog-content {
+  padding: 20px;
+}
+
+.auth-dialog-content .cage-info {
+  margin-bottom: 20px;
+}
+
+.auth-dialog-content .label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.auth-dialog-content .user-select {
+  margin-top: 20px;
+}
+
+.auth-dialog-content .el-select {
+  margin-top: 10px;
 }
 </style>
