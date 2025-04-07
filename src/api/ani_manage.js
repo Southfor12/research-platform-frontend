@@ -195,3 +195,47 @@ export function cancelAuthorization(params) {
         params
     })
 }
+
+//获取自持笼位编号
+export function getCageNumber(params) {
+    return request({
+        url: '/animal/fac/cage/reservednumbers',
+        method: 'get',
+        params
+    })
+}
+
+//获取锁定笼位的编号
+export function getLockedCageNumber(params) {
+    return request({
+        url: '/animal/fac/cage/lockednumbers',
+        method: 'get',
+        params
+    })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

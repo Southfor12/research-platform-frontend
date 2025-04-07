@@ -200,17 +200,17 @@
 
         </el-row>
 
-        <el-row gutter="20">
+        <!-- <el-row gutter="20"> -->
           <!-- 饲养服务 -->
-          <el-col :span="12">
+          <!-- <el-col :span="12">
             <el-form-item label="饲养服务" prop="service" style="margin-top: 40px">
               <el-select v-model="submitform.service" size="medium" class="width-200">
                 <el-option value="true" label="有"></el-option>
                 <el-option value="false" label="无"></el-option>
               </el-select>
             </el-form-item>
-          </el-col>
-        </el-row>
+          </el-col> -->
+        <!-- </el-row> -->
         <el-row gutter="20">
           <el-col :span="12">
             <el-form-item label="实验内容" prop="description">

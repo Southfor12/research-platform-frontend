@@ -90,10 +90,14 @@
                     @mouseleave="handleCellLeave"
                     class="cell-content"
                     :class="{ 'has-cage': hasCage(scope.row.row, col) }">
+                    <i v-if="hasCage(scope.row.row, col)" class="el-icon-pet animal-icon"></i>
                     {{ scope.row[col] }}
                   </div>
                 </el-tooltip>
-                <span v-else :class="{ 'has-cage': hasCage(scope.row.row, col) }">{{ scope.row[col] }}</span>
+                <span v-else :class="{ 'has-cage': hasCage(scope.row.row, col) }">
+                  <i v-if="hasCage(scope.row.row, col)" class="el-icon-pet animal-icon"></i>
+                  {{ scope.row[col] }}
+                </span>
               </template>
             </el-table-column>
           </el-table>
@@ -132,10 +136,6 @@
             </div>
             <div class="color-legend" v-show="showLegend">
               <div class="legend-title">笼位状态说明</div>
-              <div class="legend-item">
-                <div class="color-block current-selected-cell"></div>
-                <span>当前选中笼子</span>
-              </div>
               <div class="legend-item">
                 <div class="color-block highlight"></div>
                 <span>正在饲养</span>
@@ -2497,13 +2497,14 @@ export default {
 }
 
 .has-cage {
+  position: relative;
   color: #E74C3C !important;
   font-weight: 600 !important;
   font-size: 14px !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   letter-spacing: 0.5px;
-  position: relative;
   display: inline-block;
+  padding-top: 12px; /* 为图标留出空间 */
 }
 
 .has-cage:hover {
@@ -2541,8 +2542,10 @@ export default {
 }
 
 .el-table td {
+  position: relative;
   text-align: center !important;
   vertical-align: middle !important;
+  padding: 8px !important;
 }
 
 .cell-content {
@@ -2609,5 +2612,24 @@ export default {
 
 .auth-dialog-content .el-select {
   margin-top: 10px;
+}
+
+/* 添加动物图标样式 */
+.animal-icon {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 12px;
+  color: #E74C3C;
+  z-index: 1;
+}
+
+.cell-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

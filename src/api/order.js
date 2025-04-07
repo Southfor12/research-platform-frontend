@@ -8,7 +8,7 @@ export function orderList(params) {
   })
 }
 
-
+//获取饲养笼子已经被使用情况
 export function getCageused(params) {
   return request({
     url: '/animal/fac/cage/used',
