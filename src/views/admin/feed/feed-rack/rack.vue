@@ -90,14 +90,26 @@
                     @mouseleave="handleCellLeave"
                     class="cell-content"
                     :class="{ 'has-cage': hasCage(scope.row.row, col) }">
-                    <i v-if="hasCage(scope.row.row, col)" class="el-icon-pet animal-icon"></i>
-                    {{ scope.row[col] }}
+                    <div v-if="hasCage(scope.row.row, col)" class="animal-badge">
+                      <img src="@/assets/images/animal-icon.svg" class="animal-icon" alt="动物" />
+                    </div>
+                    <div class="cell-info">
+                      <span class="cell-position">{{ scope.row[col] }}</span>
+                      <span v-if="getCellContact(scope.row.row, col)" class="cell-contact">{{ getCellContact(scope.row.row, col) }}</span>
+                    </div>
                   </div>
                 </el-tooltip>
-                <span v-else :class="{ 'has-cage': hasCage(scope.row.row, col) }">
-                  <i v-if="hasCage(scope.row.row, col)" class="el-icon-pet animal-icon"></i>
-                  {{ scope.row[col] }}
-                </span>
+                <div v-else
+                  class="cell-content"
+                  :class="{ 'has-cage': hasCage(scope.row.row, col) }">
+                  <div v-if="hasCage(scope.row.row, col)" class="animal-badge">
+                    <img src="@/assets/images/animal-icon.svg" class="animal-icon" alt="动物" />
+                  </div>
+                  <div class="cell-info">
+                    <span class="cell-position">{{ scope.row[col] }}</span>
+                    <span v-if="getCellContact(scope.row.row, col)" class="cell-contact">{{ getCellContact(scope.row.row, col) }}</span>
+                  </div>
+                </div>
               </template>
             </el-table-column>
           </el-table>
@@ -701,8 +713,41 @@ export default {
               this.activecage = res.data;
               // 获取笼子的详细信息
               getCageAll({ cage_rack_id: id, hideSuccess: true })
-                .then((cageRes) => {
-                  this.cageInfoList = cageRes.data;
+                .then(async (cageRes) => {
+                  // 获取每个笼子的联系人信息
+                  const cageInfoWithContacts = await Promise.all(
+                    cageRes.data.map(async (cage) => {
+                      if (cage.animal_count > 0) {
+                        try {
+                          // 获取笼盒ID
+                          const cageBoxRes = await getCageBoxId({
+                            cage_id: cage.id,
+                            hideSuccess: true
+                          });
+                          
+                          if (cageBoxRes.data && cageBoxRes.data.id) {
+                            // 获取订单信息
+                            const orderRes = await getOrderInfo({
+                              cage_id: cage.id,
+                              hideSuccess: true
+                            });
+                            
+                            if (orderRes.data && orderRes.data.user) {
+                              return {
+                                ...cage,
+                                user: orderRes.data.user
+                              };
+                            }
+                          }
+                        } catch (error) {
+                          console.error('获取联系人信息失败:', error);
+                        }
+                      }
+                      return cage;
+                    })
+                  );
+                  
+                  this.cageInfoList = cageInfoWithContacts;
                   resolve();
                 })
                 .catch(() => {
@@ -1999,6 +2044,10 @@ export default {
         this.$message.error('取消授权失败');
       }
     },
+    getCellContact(row, col) {
+      const cageInfo = this.cageInfoList.find(cage => cage.number === (row - 1) * this.columns.length + (col.charCodeAt(0) - 'A'.charCodeAt(0)));
+      return cageInfo ? cageInfo.user : '';
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -2436,11 +2485,14 @@ export default {
 
 /* 添加新的样式 */
 .cell-content {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 2px;
+  padding-top: 18px;
 }
 
 .cage-info-tooltip {
@@ -2615,21 +2667,95 @@ export default {
 }
 
 /* 添加动物图标样式 */
-.animal-icon {
+.animal-badge {
   position: absolute;
   top: 2px;
   left: 2px;
-  font-size: 12px;
-  color: #E74C3C;
-  z-index: 1;
-}
-
-.cell-content {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
+}
+
+.animal-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  display: block;
+}
+
+.animal-label {
+  font-size: 12px;
+  color: #67c23a;
+  line-height: 1;
+}
+
+@keyframes swing {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* 添加单元格信息样式 */
+.cell-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.cell-position {
+  font-size: 14px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.cell-contact {
+  font-size: 12px;
+  color: #606266;
+  margin-top: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.has-cage .cell-contact {
+  color: #E74C3C;
+}
+
+/* 调整单元格内容的布局 */
+.cell-content {
+  padding: 4px;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 调整动物图标位置 */
+.animal-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+
+/* 确保表格单元格有足够的高度 */
+.el-table td {
+  height: 60px;
+  padding: 4px !important;
 }
 </style>

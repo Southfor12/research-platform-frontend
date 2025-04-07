@@ -181,6 +181,24 @@
           </el-col>
         </el-row>
 
+        <el-row gutter="20">
+          <!-- 笼盒类型 -->
+          <el-col :span="12">
+            <el-form-item label="笼盒类型" prop="cage_box_type">
+              <el-select v-model="submitform.cage_box_type" size="medium" class="width-200" @change="handleCageBoxTypeChange">
+                <el-option v-for="item in cageBoxList" :key="item.id" :label="item.box_type" :value="item.box_type"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <!-- 笼盒价格 -->
+          <el-col :span="12">
+            <el-form-item label="笼盒价格/个" prop="cage_box_price">
+              <el-input size="medium" class="width-200" :readonly="true" :value="submitform.cage_box_price + '元'">
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
         <el-row>
           <!-- 表格 -->
           <el-col v-if="submitform.type === 'true'">
@@ -224,7 +242,7 @@
           <el-col :span="12">
             <el-form-item label="选择开始日期" prop="start_time">
               <el-date-picker v-model="submitform.start_time" type="date" placeholder="选择开始日期"
-                style="width: 100%"></el-date-picker>
+                style="width: 100%" @change="watchDateChange"></el-date-picker>
             </el-form-item>
           </el-col>
         </el-row>
@@ -232,7 +250,17 @@
           <el-col :span="12">
             <el-form-item label="选择结束日期" prop="end_time">
               <el-date-picker v-model="submitform.end_time" type="date" placeholder="选择结束日期"
-                style="width: 100%"></el-date-picker>
+                style="width: 100%" @change="watchDateChange"></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 总价格展示 -->
+        <el-row gutter="20">
+          <el-col :span="12">
+            <el-form-item label="总价格" prop="total_price">
+              <el-input size="medium" class="width-200" :readonly="true" :value="calculateTotalPrice().toFixed(2) + '元'">
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -259,8 +287,10 @@ import { getAnimalStrain, getAnimalTypeById } from '@/api/ani_setting';
 import { getAnimalType } from '@/api/ani_setting';
 import { getCourtyard, getTenement, getLaboratory, getRack } from '@/api/colleges';
 import { getCageused, AddFeed } from '@/api/order';
+import { getCageNumber, getLockedCageNumber } from '@/api/ani_manage';
 import Empty from '@/components/Empty';
 import store from '@/store';
+import { getCageBoxList } from '@/api/cage_box';
 export default {
   components: {
     Empty,
@@ -288,6 +318,8 @@ export default {
       tableData: [], // 表格数据
       activeCells: [], // 存储多选单元格的信息
       activecage: [],  // 存储多选单元格的信息  被选中的笼子的位置号
+      reservedCageNumbers: [], // 存储自持笼位的编号
+      lockedCageNumbers: [], // 存储锁定笼位的编号
 
       is_laboratory: 'true', // 是否饲养
       project_list: [
@@ -320,6 +352,8 @@ export default {
         count: 0,
         care_id: '',
         cage_number: [],
+        cage_box_type: '', // 新增笼盒类型
+        cage_box_price: 0, // 新增笼盒价格
         animals: [
           {
             name: '',
@@ -349,6 +383,8 @@ export default {
           id: 1,
         },
       ],
+      cageBoxList: [], // 新增笼盒列表
+      feedPrice: 0, // 新增饲养价格
     };
   },
   watch: {
@@ -546,6 +582,11 @@ export default {
     },
     // 选择笼架的时候更新笼子
     handleRackChange() {
+      // 清空之前的选择
+      this.activeCells = [];
+      this.submitform.cage_number = [];
+      this.submitform.count = 0;
+      
       this.rows = this.cageList.find((item) => item.id === this.submitform.rack_id).height;
       this.columns = [];
       const j = this.cageList.find((item) => item.id === this.submitform.rack_id).width;
@@ -553,17 +594,55 @@ export default {
         this.columns.push(String.fromCharCode(64 + i));
       }
       this.generateTableData();//生成对应的表格数据
+      
+      // 先获取已使用的笼位
       this.getCageUsed(this.submitform.rack_id).then(() => {
-        for (let i = 0; i < this.activecage.length; i++) {
-          const row = this.tableData[Math.floor(this.activecage[i] / this.rows)]; // 获取特定行的数据
-          const column = this.columns.find(
-            (col) =>
-              col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
-          ); // 获取特定列的名字
-          this.handleCellClick(row, { property: column });
-        }
+        // 再获取自持笼位
+        this.getReservedCageNumbers(this.submitform.rack_id).then(() => {
+          // 再获取锁定笼位
+          this.getLockedCageNumbers(this.submitform.rack_id).then(() => {
+            // 渲染已使用的笼位
+            for (let i = 0; i < this.activecage.length; i++) {
+              const row = this.tableData[Math.floor(this.activecage[i] / this.columns.length)]; // 获取特定行的数据
+              const column = this.columns.find(
+                (col) =>
+                  col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
+              ); // 获取特定列的名字
+              this.handleCellClick(row, { property: column });
+            }
+            
+            // 渲染自持笼位
+            for (let i = 0; i < this.reservedCageNumbers.length; i++) {
+              const cageNumber = this.reservedCageNumbers[i];
+              const row = this.tableData[Math.floor(cageNumber / this.columns.length)]; // 获取特定行的数据
+              const column = this.columns.find(
+                (col) =>
+                  col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+              ); // 获取特定列的名字
+              
+              // 如果该笼位不在已使用的笼位中，则添加为自持笼位
+              if (!this.activecage.includes(cageNumber)) {
+                this.handleReservedCellClick(row, { property: column });
+              }
+            }
+            
+            // 渲染锁定笼位
+            for (let i = 0; i < this.lockedCageNumbers.length; i++) {
+              const cageNumber = this.lockedCageNumbers[i];
+              const row = this.tableData[Math.floor(cageNumber / this.columns.length)]; // 获取特定行的数据
+              const column = this.columns.find(
+                (col) =>
+                  col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+              ); // 获取特定列的名字
+              
+              // 如果该笼位不在已使用的笼位和自持笼位中，则添加为锁定笼位
+              if (!this.activecage.includes(cageNumber) && !this.reservedCageNumbers.includes(cageNumber)) {
+                this.handleLockedCellClick(row, { property: column });
+              }
+            }
+          });
+        });
       });
-
     },
 
     // 添加一行
@@ -601,37 +680,100 @@ export default {
       if (!row.row) {
         cellKey = { row: row, column: column };
       }
-      // console.log("我是activeCells,我的值为：",this.activeCells);
-      // console.log("我是cellKey,我的值为：",cellKey);
-      // console.log("我是activecage,我的值为:",this.activecage);
+      
+      // 计算当前单元格的编号
+      const cageNumber = (row.row - 1) * this.columns.length + column.property.charCodeAt(0) - 'A'.charCodeAt(0);
+      
+      // 检查是否是已使用的笼位（黄色高亮）
+      const isUsed = this.activecage && this.activecage.includes(cageNumber);
+      
+      // 检查是否是自持笼位（蓝色高亮）
+      const isReserved = this.reservedCageNumbers && this.reservedCageNumbers.includes(cageNumber);
+      
+      // 检查是否是锁定笼位（灰色高亮）
+      const isLocked = this.lockedCageNumbers && this.lockedCageNumbers.includes(cageNumber);
+      
+      // 如果单元格已经被渲染了颜色（已使用、自持或锁定），则不允许选择
+      if (isUsed || isReserved || isLocked) {
+        return;
+      }
+      
+      // 检查单元格是否已被选中
       const cellIndex = this.activeCells.findIndex(
         (cell) => cell.row === cellKey.row && cell.column === cellKey.column
       );
-      const res =
-        (row.row - 1) * this.columns.length + column.property.charCodeAt(0) - 'A'.charCodeAt(0);
+      
       if (cellIndex === -1) {
-        // 如果单元格不在 activeCells 中，添加
+        // 如果单元格不在 activeCells 中，添加并设置为红色高亮
         this.activeCells.push(cellKey);
+        // 添加到已选笼子编号数组
+        this.submitform.cage_number.push(cageNumber);
+        // 增加已选笼子数量
+        this.submitform.count++;
       } else {
         // 如果单元格已被选中，移除
-        if (!this.activecage.includes(res)) {
-          this.activeCells.splice(cellIndex, 1);
+        this.activeCells.splice(cellIndex, 1);
+        // 从已选笼子编号数组中移除
+        const numberIndex = this.submitform.cage_number.indexOf(cageNumber);
+        if (numberIndex !== -1) {
+          this.submitform.cage_number.splice(numberIndex, 1);
         }
-      }
-      if (!this.activecage.includes(res)) {
-        this.submitform.cage_number.push(res);
-        this.submitform.count++;
-        console.log("我是count的值：", this.count)
+        // 减少已选笼子数量
+        this.submitform.count--;
       }
     },
 
     //根据单元格位置动态设置类名
     getCellClassName({ row, columnIndex, column }) {
+      // 确保columnIndex有效且this.columns数组不为空
+      if (columnIndex <= 0 || !this.columns || this.columns.length === 0) {
+        return 'default-cell';
+      }
+      
       const colKey = this.columns[columnIndex - 1]; // 列名，从索引获取
-      const isActive = this.activeCells.some(
+      if (!colKey) {
+        return 'default-cell';
+      }
+      
+      // 计算当前单元格的编号
+      const cageNumber = (row.row - 1) * this.columns.length + (colKey.charCodeAt(0) - 'A'.charCodeAt(0));
+      
+      // 检查是否是自持笼位
+      const isReserved = this.reservedCageNumbers && this.reservedCageNumbers.includes(cageNumber);
+      
+      // 检查是否是锁定笼位
+      const isLocked = this.lockedCageNumbers && this.lockedCageNumbers.includes(cageNumber);
+      
+      // 检查是否被选中（红色高亮）
+      const isSelected = this.activeCells.some(
         (cell) => cell.row === row.row && cell.column === colKey
       );
-      return isActive ? 'highlight' : 'default-cell'; // 高亮或默认样式
+      
+      // 检查是否是已使用的笼位（黄色高亮）
+      const isUsed = this.activecage && this.activecage.includes(cageNumber);
+      
+      // 如果是自持笼位，返回蓝色高亮样式
+      if (isReserved) {
+        return 'highlight-blue';
+      }
+      
+      // 如果是锁定笼位，返回灰色高亮样式
+      if (isLocked) {
+        return 'highlight-gray';
+      }
+      
+      // 如果是已使用的笼位，返回黄色高亮样式
+      if (isUsed) {
+        return 'highlight';
+      }
+      
+      // 如果被选中，返回红色高亮样式
+      if (isSelected) {
+        return 'highlight-red';
+      }
+      
+      // 否则返回默认样式
+      return 'default-cell';
     },
 
     generateTableData() {
@@ -677,6 +819,80 @@ export default {
       }
     },
 
+    // 获取自持笼位编号
+    getReservedCageNumbers(id) {
+      try {
+        return new Promise((resolve, reject) => {
+          getCageNumber({ cage_rack_id: id })
+            .then((res) => {
+              console.log('自持笼位:', res.data);
+              this.reservedCageNumbers = res.data;
+              resolve();
+            })
+            .catch(() => {
+              reject();
+            });
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
+    // 获取锁定笼位编号
+    getLockedCageNumbers(id) {
+      try {
+        return new Promise((resolve, reject) => {
+          getLockedCageNumber({ cage_rack_id: id })
+            .then((res) => {
+              console.log('锁定笼位:', res.data);
+              this.lockedCageNumbers = res.data;
+              resolve();
+            })
+            .catch(() => {
+              reject();
+            });
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
+    // 处理自持笼位单元格点击事件
+    handleReservedCellClick(row, column) {
+      let cellKey = { row: row.row, column: column.property };
+      if (!row.row) {
+        cellKey = { row: row, column: column };
+      }
+      
+      // 将自持笼位添加到activeCells中，但不添加到cage_number中
+      const cellIndex = this.activeCells.findIndex(
+        (cell) => cell.row === cellKey.row && cell.column === cellKey.column
+      );
+      
+      if (cellIndex === -1) {
+        // 如果单元格不在 activeCells 中，添加
+        this.activeCells.push(cellKey);
+      }
+    },
+
+    // 处理锁定笼位单元格点击事件
+    handleLockedCellClick(row, column) {
+      let cellKey = { row: row.row, column: column.property };
+      if (!row.row) {
+        cellKey = { row: row, column: column };
+      }
+      
+      // 将锁定笼位添加到activeCells中，但不添加到cage_number中
+      const cellIndex = this.activeCells.findIndex(
+        (cell) => cell.row === cellKey.row && cell.column === cellKey.column
+      );
+      
+      if (cellIndex === -1) {
+        // 如果单元格不在 activeCells 中，添加
+        this.activeCells.push(cellKey);
+      }
+    },
+
     // 获取 Tenement 列表
     getTenementList() {
       return new Promise((resolve, reject) => {
@@ -713,10 +929,85 @@ export default {
       }
     },
 
+    // 获取笼盒列表
+    async getCageBoxList() {
+      try {
+        const res = await getCageBoxList();
+        if (res.status === 1) {
+          this.cageBoxList = res.data;
+        }
+      } catch (error) {
+        console.error('获取笼盒列表失败:', error);
+      }
+    },
+
+    // 处理笼盒类型变化
+    handleCageBoxTypeChange(value) {
+      const selectedBox = this.cageBoxList.find(item => item.box_type === value);
+      if (selectedBox) {
+        this.submitform.cage_box_type = selectedBox.box_type;
+        this.submitform.cage_box_price = selectedBox.cage_box_price;
+      }
+    },
+
+    // 计算总天数
+    calculateTotalDays() {
+      if (!this.submitform.start_time || !this.submitform.end_time) {
+        return 0;
+      }
+      const startDate = new Date(this.submitform.start_time);
+      const endDate = new Date(this.submitform.end_time);
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    },
+
+    // 计算总价格
+    calculateTotalPrice() {
+      // 笼盒总价 = 预计需要笼子数 * 笼盒价格
+      const cageBoxTotal = this.totalCageNums * this.submitform.cage_box_price;
+      
+      // 饲养总价 = 总天数 * 笼子数 * 饲养价格
+      const feedTotal = this.calculateTotalDays() * this.submitform.count * this.feedPrice;
+      
+      // 总价格 = 笼盒总价 + 饲养总价
+      return cageBoxTotal + feedTotal;
+    },
+
+    // 获取饲养价格
+    async getFeedPrice() {
+      try {
+        // 从路由中获取id参数
+        const id = this.$route.params.id;
+        if (!id) {
+          console.error('未找到路由参数id');
+          return;
+        }
+        const res = await get_a_Feed({ id });
+        if (res.status === 1) {
+          this.feedPrice = res.data.price;
+        }
+      } catch (error) {
+        console.error('获取饲养价格失败:', error);
+        this.feedPrice = 0;
+      }
+    },
+
+    // 监听日期变化
+    watchDateChange() {
+      this.$forceUpdate(); // 强制更新视图，重新计算总价格
+    },
+
     // 初始化数据
     async init() {
       try {
-        await Promise.all([this.getCampusList(), this.getTenementList(), this.getLaboratoryList()]);
+        await Promise.all([
+          this.getCampusList(), 
+          this.getTenementList(), 
+          this.getLaboratoryList(),
+          this.getCageBoxList(), // 新增获取笼盒列表
+          this.getFeedPrice() // 新增获取饲养价格
+        ]);
         this.AllcampusList = this.campusList;
         this.AlltenementList = this.tenementList;
         this.AlllaboratoryList = this.laboratoryList;
@@ -772,5 +1063,21 @@ export default {
   /* 默认情况下，背景透明 */
   color: black;
   /* 设置文本颜色为黑色 */
+}
+
+/* 蓝色高亮 */
+.highlight-blue {
+  background-color: #409EFF;
+  /* 设置背景为蓝色 */
+  color: white;
+  /* 设置文本颜色为白色，保证蓝色背景下文字清晰可见 */
+}
+
+/* 灰色高亮 */
+.highlight-gray {
+  background-color: #909399;
+  /* 设置背景为灰色 */
+  color: white;
+  /* 设置文本颜色为白色，保证灰色背景下文字清晰可见 */
 }
 </style>
