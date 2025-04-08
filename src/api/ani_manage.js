@@ -214,6 +214,23 @@ export function getLockedCageNumber(params) {
     })
 }
 
+//动物管理的查询
+export function getAnimalManage(params) {
+    return request({
+        url: '/animal/care/animalimport/page',
+        method: 'get',
+        params
+    })
+}
+
+//动物处死
+export function animalDeath(data) {
+    return request({
+        url: '/animal/care/animalimport/kill',
+        method: 'put',
+        data
+    })
+}
 
 
 

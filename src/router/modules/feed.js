@@ -42,6 +42,16 @@ const feed = {
           }
     },
     {
+        path: '/admin/feed/animal_manage',
+        name:'动物管理',
+        component: () => import('@/views/admin/feed/animal-manage/index'),
+        meta: {
+            title: '动物管理',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+          }
+    },
+    {
         path : '/admin/feed/animal_strain_manage',
         name : '品系管理',
         component : ()=> import('@/views/admin/feed/animal_strain_manage/animal_strain_manage'),
