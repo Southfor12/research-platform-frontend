@@ -170,11 +170,11 @@ export function updateCageBoxInfo(params) {
 }
 
 //饲养异常  
-export function feedAbnormal(params) {
+export function feedAbnormal(data) {
     return request({
         url: '/animal/fac/cage/insertfeedabnormality',
         method: 'post',
-        params
+        data
     })
 }
 
@@ -233,24 +233,122 @@ export function animalDeath(data) {
 }
 
 
+//动物管理的编辑
+export function animalManageEdit(data) {
+    return request({
+        url: '/animal/care/animalimport/update',
+        method: 'put',
+        data
+    })
+}
 
+//动物管理的修改动物状态
+export function updateAnimalStatus2(data) {
+    return request({
+        url: '/animal/care/animalimport/updatestatus',
+        method: 'put',
+        data
+    })
+}
 
+//动物管理的提交测量数据功能
+export function submitMeasureData(data) {
+    return request({
+        url: '/animal/care/animalimport/insertsurvey',
+        method: 'post',
+        data
+    })
+}
 
+//动物管理的疾病治疗
+export function diseaseTreatment(data) {
+    return request({
+        url: '/animal/care/animalimport/inserttreatment',
+        method: 'post',
+        data
+    })
+}
 
+//查询所有饲养异常类型
+export function getFeedAbnormalType(params) {
+    return request({
+        url: '/animal/set/abnormalitytype/all',
+        method: 'get',
+        params
+    })
+}
 
+//获取饲养异常
+export function getFeedAbnormal(params) {
+    return request({
+        url: '/animal/fac/feedabnormality/all',
+        method: 'get',
+        params
+    })
+}
 
+//查询所有尸体处理的记录
+export function getCadaverManage(params) {
+    return request({
+        url: '/animal/care/bodydisposal/page',
+        method: 'get',
+        params
+    })
+}
 
+//新增尸体处理
+export function addCadaverManage(data) {
+    return request({
+        url: '/animal/care/bodydisposal',
+        method: 'post',
+        data
+    })
+}   
 
+//删除尸体处理  
+export function deleteCadaverManage(params) {
+    return request({
+        url: '/animal/care/bodydisposal',
+        method: 'delete',
+        params
+    })
+}
 
+//查询测量数据的体重
+export function getMeasureDataWeight(params) {
+    return request({
+        url: '/animal/care/surveydata/weight',
+        method: 'get',
+        params
+    })
+}
 
+//查询测量数据的体温
+export function getMeasureDataTemperature(params) {
+    return request({
+        url: '/animal/care/surveydata/temperature',
+        method: 'get',
+        params
+    })
+}   
 
+//分页查询所有精子
+export function getSpermManage(params) {
+    return request({
+        url: '/animal/care/spermmanagement/page',
+        method: 'get',
+        params
+    })
+}
 
-
-
-
-
-
-
+//新增精子  
+export function addSperm(data) {
+    return request({
+        url: '/animal/care/spermmanagement',
+        method: 'post',
+        data
+    })
+}
 
 
 

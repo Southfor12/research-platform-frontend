@@ -35,12 +35,6 @@
                         </template>
                     </el-table-column>
 
-                    <el-table-column label="分配权限" width="120" align="center">
-                        <template #default="scope">
-                            <el-button type="primary" size="small" @click="assignPermission(scope.row)">分配权限</el-button>
-                        </template>
-                    </el-table-column>
-
                     <el-table-column label="取消分配" width="120" align="center">
                         <template #default="scope">
                             <el-button type="warning" size="small" @click="cancelAssignment(scope.row)">取消分配</el-button>
@@ -259,9 +253,6 @@ export default {
             }
             this.dialogVisible = false; // 关闭弹窗
             this.$message.success('笼位分配成功！');
-        },
-        assignPermission(order) {
-            console.log('分配权限:', order);
         },
         async cancelAssignment(order) {
             try {

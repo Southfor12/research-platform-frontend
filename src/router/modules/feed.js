@@ -52,6 +52,26 @@ const feed = {
           }
     },
     {
+        path: '/admin/feed/measure_data',
+        name: '测量数据',
+        component: () => import('@/views/admin/feed/measure-data/index'),
+        meta: {
+            title: '测量数据',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
+    {
+        path: '/admin/feed/feed_abnormal',
+        name: '饲养异常',
+        component: () => import('@/views/admin/feed/feed-abnormal/index'),
+        meta: {
+            title: '饲养异常',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
+    {
         path : '/admin/feed/animal_strain_manage',
         name : '品系管理',
         component : ()=> import('@/views/admin/feed/animal_strain_manage/animal_strain_manage'),
@@ -70,8 +90,27 @@ const feed = {
             node : 'apparatus',
             activeClass : 'apparatus'
         }
-    }
-
+    },
+    {
+        path: '/admin/feed/cadaver_manage',
+        name: '尸体处理',
+        component: () => import('@/views/admin/feed/cadaver-manage/index'),
+        meta: {
+            title: '尸体处理',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
+    {
+        path: '/admin/feed/sperm_manage',
+        name: '精子管理',
+        component: () => import('@/views/admin/feed/sperm-manage/index'),
+        meta: {
+            title: '精子管理',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
     ]
 }
 

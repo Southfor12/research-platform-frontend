@@ -167,12 +167,14 @@
         <div class="operation-section">
           <div class="button-group">
             <el-button type="primary" icon="el-icon-delete" plain @click="handleExecute">处死</el-button>
-            <el-button type="primary" icon="el-icon-edit" plain>编辑</el-button>
+            <el-button type="primary" icon="el-icon-edit" plain @click="handleEdit">编辑</el-button>
             <el-button type="primary" icon="el-icon-share" plain>移笼/分笼</el-button>
             <el-button type="primary" icon="el-icon-setting" plain>基础设置</el-button>
-            <el-button type="primary" icon="el-icon-edit" plain>修改状态</el-button>
-            <el-button type="primary" icon="el-icon-document" plain>病历记录</el-button>
-            <el-button type="primary" icon="el-icon-first-aid-kit" plain>生物治疗</el-button>
+            <el-button type="primary" icon="el-icon-edit" plain @click="handleStatusChange">修改状态</el-button>
+            <el-button type="primary" icon="el-icon-connection" plain @click="handleBreeding">配繁</el-button>
+            <el-button type="primary" icon="el-icon-data-line" plain @click="handleMeasurement">测量数据</el-button>
+            <el-button type="primary" icon="el-icon-document-add" plain @click="handleWorkOrder">提交工单</el-button>
+            <el-button type="primary" icon="el-icon-first-aid-kit" plain @click="handleTreatment">生物治疗</el-button>
           </div>
         </div>
 
@@ -251,6 +253,206 @@
           </div>
         </el-dialog>
 
+        <!-- 编辑弹窗 -->
+        <el-dialog
+          title="编辑动物信息"
+          :visible.sync="editDialogVisible"
+          width="800px"
+          :close-on-click-modal="false"
+          @close="handleEditDialogClose">
+          <div class="edit-table-container">
+            <el-table 
+              :data="editTableData" 
+              border 
+              style="width: 100%"
+              :row-class-name="editTableRowClassName">
+              <el-table-column label="动物类型" prop="animalType" width="120">
+                <template slot-scope="scope">
+                  <el-select v-model="scope.row.animalType" placeholder="请选择">
+                    <el-option
+                      v-for="item in animalTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="品系ID" prop="strainId" width="120">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.strainId"></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="性别" prop="gender" width="100">
+                <template slot-scope="scope">
+                  <el-select v-model="scope.row.gender" placeholder="请选择">
+                    <el-option label="雄" value="雄"></el-option>
+                    <el-option label="雌" value="雌"></el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="出生日期" prop="birthDate" width="180">
+                <template slot-scope="scope">
+                  <el-date-picker
+                    v-model="scope.row.birthDate"
+                    type="date"
+                    placeholder="选择日期"
+                    value-format="yyyy-MM-dd">
+                  </el-date-picker>
+                </template>
+              </el-table-column>
+              <el-table-column label="代数别名" prop="number" width="120">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.number"></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="毛色" prop="color" width="120">
+                <template slot-scope="scope">
+                  <el-select v-model="scope.row.color" placeholder="请选择">
+                    <el-option label="黑色" value="黑色"></el-option>
+                    <el-option label="白色" value="白色"></el-option>
+                    <el-option label="灰色" value="灰色"></el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="描述" prop="description">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.description" type="textarea" :rows="2"></el-input>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="editDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="confirmEdit" :loading="editLoading">确 定</el-button>
+          </div>
+        </el-dialog>
+
+        <!-- 修改状态弹窗 -->
+        <el-dialog
+          title="修改状态"
+          :visible.sync="statusDialogVisible"
+          width="400px"
+          :close-on-click-modal="false"
+          @close="handleStatusDialogClose">
+          <el-form :model="statusForm" ref="statusForm" label-width="100px">
+            <el-form-item label="动物状态">
+              <el-select v-model="statusForm.status" placeholder="不修改" style="width: 100%">
+                <el-option
+                  v-for="item in animalStatusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="实验状态">
+              <el-select v-model="statusForm.experimentalStatus" placeholder="不修改" style="width: 100%">
+                <el-option label="不修改" value=""></el-option>
+                <el-option label="实验结束" value="实验结束"></el-option>
+                <el-option label="实验中" value="实验中"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="statusDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="confirmStatusChange" :loading="statusLoading">提 交</el-button>
+          </div>
+        </el-dialog>
+
+        <!-- 测量数据弹窗 -->
+        <el-dialog
+          title="测量数据"
+          :visible.sync="measureDialogVisible"
+          width="900px"
+          :close-on-click-modal="false"
+          @close="handleMeasureDialogClose">
+          <el-table :data="measureTableData" border style="width: 100%">
+            <el-table-column label="动物ID" prop="animalId" width="120">
+              <template slot-scope="scope">
+                <span>{{ scope.row.animalId }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="标号" prop="number" width="120">
+              <template>
+                <span>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="测量时间" width="220">
+              <template slot-scope="scope">
+                <el-date-picker
+                  v-model="scope.row.surveyTime"
+                  type="datetime"
+                  placeholder="选择日期时间"
+                  value-format="yyyy-MM-dd HH:mm:ss"
+                  style="width: 100%">
+                </el-date-picker>
+              </template>
+            </el-table-column>
+            <el-table-column label="体重" width="180">
+              <template slot-scope="scope">
+                <el-input v-model="scope.row.weightData" placeholder="请输入">
+                  <template slot="append">g</template>
+                </el-input>
+              </template>
+            </el-table-column>
+            <el-table-column label="肛温" width="180">
+              <template slot-scope="scope">
+                <el-input v-model="scope.row.temperatureData" placeholder="请输入">
+                  <template slot="append">℃</template>
+                </el-input>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="measureDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="submitMeasure" :loading="measureLoading">提 交</el-button>
+          </div>
+        </el-dialog>
+
+        <!-- 生物治疗弹窗 -->
+        <el-dialog
+          title="生物治疗"
+          :visible.sync="treatmentDialogVisible"
+          width="500px"
+          :close-on-click-modal="false"
+          @close="handleTreatmentDialogClose">
+          <el-form :model="treatmentForm" label-width="100px">
+            <el-form-item label="疾病类型">
+              <el-select v-model="treatmentForm.disease_id" placeholder="请选择疾病类型" style="width: 100%">
+                <el-option
+                  v-for="item in diseaseTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="治疗方案">
+              <el-select v-model="treatmentForm.treatment_id" placeholder="请选择治疗方案" style="width: 100%">
+                <el-option
+                  v-for="item in treatmentPlanOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="描述">
+              <el-input
+                type="textarea"
+                v-model="treatmentForm.description"
+                :rows="4"
+                placeholder="请输入描述信息">
+              </el-input>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="treatmentDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="submitTreatment" :loading="treatmentLoading">提 交</el-button>
+          </div>
+        </el-dialog>
+
         <!-- 分页 -->
         <div class="pagination-container">
           <el-pagination
@@ -269,8 +471,8 @@
 </template>
 
 <script>
-import { getAnimalType, getAnimalStrain, getAnimalDeathReason } from '@/api/ani_setting'
-import { getAnimalStatus, getAnimalManage, animalDeath } from '@/api/ani_manage'
+import { getAnimalType, getAnimalStrain, getAnimalDeathReason, getAnimalDiseaseType, getTreatmentPlan } from '@/api/ani_setting'
+import { getAnimalStatus, getAnimalManage, animalDeath, animalManageEdit, updateAnimalStatus2, submitMeasureData, diseaseTreatment } from '@/api/ani_manage'
 
 export default {
   name: 'AnimalManage',
@@ -316,9 +518,10 @@ export default {
       executeDialogVisible: false,
       executeLoading: false,
       executeForm: {
+        id: [],
+        died_time: new Date().toISOString().split('T')[0] + ' 00:00:00',
         reason: '',
-        remark: '',
-        died_time: new Date().toISOString().split('T')[0] + ' 00:00:00'
+        description: ''
       },
       executeRules: {
         reason: [
@@ -330,6 +533,34 @@ export default {
       },
       deathReasonOptions: [],
       selectedRows: [], // 存储选中的行
+      // 编辑弹窗相关数据
+      editDialogVisible: false,
+      editLoading: false,
+      editTableData: [],
+      // 修改状态弹窗相关数据
+      statusDialogVisible: false,
+      statusLoading: false,
+      statusForm: {
+        id: [],
+        status: '',
+        experimentalStatus: ''
+      },
+      // 测量数据弹窗相关数据
+      measureDialogVisible: false,
+      measureLoading: false,
+      measureTableData: [], // 表格数据
+      // 生物治疗弹窗相关数据
+      treatmentDialogVisible: false,
+      treatmentLoading: false,
+      treatmentForm: {
+        disease_id: '',
+        treatment_id: '',
+        description: '',
+        animal_id: '',
+        cage_id: ''
+      },
+      diseaseTypeOptions: [], // 疾病类型选项
+      treatmentPlanOptions: [], // 治疗方案选项
     }
   },
   created() {
@@ -337,6 +568,8 @@ export default {
     this.getAnimalStatusList()
     this.getStrainList()
     this.getDeathReasonList() // 添加获取处死原因列表
+    this.getDiseaseTypeList()
+    this.getTreatmentPlanList()
   },
   methods: {
     // 获取动物列表
@@ -593,10 +826,15 @@ export default {
         this.$message.warning('请选择需要处死的动物')
         return
       }
-      if (this.selectedRows.length > 1) {
-        this.$message.warning('一次只能处死一个动物')
-        return
+
+      // 初始化表单，获取所有选中动物的ID
+      this.executeForm = {
+        id: this.selectedRows.map(row => row.animalId),
+        died_time: new Date().toISOString().split('T')[0] + ' 00:00:00',
+        reason: '',
+        description: ''
       }
+      
       this.executeDialogVisible = true
     },
 
@@ -604,9 +842,10 @@ export default {
     handleExecuteDialogClose() {
       this.$refs.executeForm.resetFields()
       this.executeForm = {
+        id: [],
+        died_time: new Date().toISOString().split('T')[0] + ' 00:00:00',
         reason: '',
-        remark: '',
-        died_time: new Date().toISOString().split('T')[0] + ' 00:00:00'
+        description: ''
       }
     },
 
@@ -615,30 +854,28 @@ export default {
       this.$refs.executeForm.validate(async valid => {
         if (!valid) return
         
-        if (this.selectedRows.length !== 1) {
-          this.$message.warning('请选择一个动物进行处死操作')
+        if (this.executeForm.id.length === 0) {
+          this.$message.warning('请选择需要处死的动物')
           return
         }
 
         this.executeLoading = true
         try {
-          // 获取选中的动物ID
-          const animalId = this.selectedRows[0].animalId
-
           // 获取选中的处死原因名称
           const selectedReason = this.deathReasonOptions.find(item => item.id === this.executeForm.reason)
           
-          await animalDeath({
-            id: animalId,
+          const params = {
+            id: this.executeForm.id,
             died_time: this.executeForm.died_time,
             reason: selectedReason ? selectedReason.name : '',
-            description: this.executeForm.remark || ''
-          })
+            description: this.executeForm.description || ''
+          }
+
+          await animalDeath(params)
           
           this.$message.success('处死操作成功')
           this.executeDialogVisible = false
           this.getAnimalList() // 刷新列表
-          // 清空选中状态
           this.$refs.table.clearSelection()
           this.selectedRows = []
         } catch (error) {
@@ -648,6 +885,318 @@ export default {
           this.executeLoading = false
         }
       })
+    },
+
+    // 编辑表格行样式
+    editTableRowClassName({ row }) {
+      return row.gender === '雄' ? 'male-row' : row.gender === '雌' ? 'female-row' : ''
+    },
+
+    // 处理编辑按钮点击
+    handleEdit() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择需要编辑的动物')
+        return
+      }
+      
+      // 将选中的行数据复制到编辑表格中
+      this.editTableData = this.selectedRows.map(row => ({
+        id: row.animalId,
+        animalType: row.animalType,
+        strainId: row.strainName,
+        gender: row.gender,
+        birthDate: row.birthDate,
+        number: row.line, // 将line映射到number字段
+        color: row.color,
+        description: row.description
+      }))
+      
+      this.editDialogVisible = true
+    },
+
+    // 处理编辑弹窗关闭
+    handleEditDialogClose() {
+      this.editTableData = []
+    },
+
+    // 确认编辑
+    async confirmEdit() {
+      this.editLoading = true
+      try {
+        // 构造更新数据
+        const updateData = this.editTableData.map(row => {
+          const changes = {}
+          changes.id = row.id
+          
+          // 只包含已修改的字段
+          if (row.color !== undefined) changes.color = row.color
+          if (row.number !== undefined) changes.number = row.number
+          if (row.description !== undefined) changes.description = row.description
+          if (row.birthDate !== undefined) changes.birth_time = row.birthDate
+          if (row.gender !== undefined) changes.gender = row.gender
+          if (row.strainId !== undefined) changes.strain_id = row.strainId
+          if (row.animalType !== undefined) changes.type = row.animalType
+          
+          return changes
+        })
+
+        await animalManageEdit(updateData)
+        this.$message.success('编辑成功')
+        this.editDialogVisible = false
+        this.getAnimalList() // 刷新列表
+        this.$refs.table.clearSelection()
+      } catch (error) {
+        console.error('编辑失败:', error)
+        this.$message.error(error.message || '编辑失败')
+      } finally {
+        this.editLoading = false
+      }
+    },
+
+    // 处理修改状态按钮点击
+    handleStatusChange() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择需要修改状态的动物')
+        return
+      }
+
+      // 初始化状态表单，获取所有选中动物的ID
+      this.statusForm = {
+        id: this.selectedRows.map(row => row.animalId),
+        status: '',
+        experimentalStatus: ''
+      }
+      
+      this.statusDialogVisible = true
+    },
+
+    // 处理状态弹窗关闭
+    handleStatusDialogClose() {
+      this.statusForm = {
+        id: [],
+        status: '',
+        experimentalStatus: ''
+      }
+    },
+
+    // 确认修改状态
+    async confirmStatusChange() {
+      if (!this.statusForm.status && !this.statusForm.experimentalStatus) {
+        this.$message.warning('请至少选择一项要修改的状态')
+        return
+      }
+
+      if (this.statusForm.id.length === 0) {
+        this.$message.warning('请选择需要修改状态的动物')
+        return
+      }
+
+      this.statusLoading = true
+      try {
+        const params = {
+          id: this.statusForm.id
+        }
+        if (this.statusForm.status) {
+          params.status = this.statusForm.status
+        }
+        if (this.statusForm.experimentalStatus) {
+          params.experimental_status = this.statusForm.experimentalStatus
+        }
+
+        await updateAnimalStatus2(params)
+        this.$message.success('状态修改成功')
+        this.statusDialogVisible = false
+        this.getAnimalList() // 刷新列表
+        this.$refs.table.clearSelection()
+      } catch (error) {
+        console.error('状态修改失败:', error)
+        this.$message.error(error.message || '状态修改失败')
+      } finally {
+        this.statusLoading = false
+      }
+    },
+
+    // 处理配繁按钮点击
+    handleBreeding() {
+      // TODO: 实现配繁功能
+      this.$message.info('配繁功能开发中...')
+    },
+
+    // 处理测量数据按钮点击
+    handleMeasurement() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择需要测量的动物')
+        return
+      }
+
+      // 初始化测量数据表格
+      const currentTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+      this.measureTableData = this.selectedRows.map(row => ({
+        animalId: row.animalId,
+        surveyTime: currentTime,
+        weightData: '', // 体重数据
+        temperatureData: '' // 肛温数据
+      }))
+      
+      this.measureDialogVisible = true
+    },
+
+    // 处理测量数据弹窗关闭
+    handleMeasureDialogClose() {
+      this.measureTableData = []
+    },
+
+    // 提交测量数据
+    async submitMeasure() {
+      const submitData = []
+      
+      // 遍历每个动物的数据
+      for (const row of this.measureTableData) {
+        // 如果填写了体重，添加体重记录
+        if (row.weightData) {
+          submitData.push({
+            animal_id: row.animalId,
+            survey_time: row.surveyTime,
+            survey_type: '体重',
+            survey_data: row.weightData
+          })
+        }
+        
+        // 如果填写了肛温，添加肛温记录
+        if (row.temperatureData) {
+          submitData.push({
+            animal_id: row.animalId,
+            survey_time: row.surveyTime,
+            survey_type: '体温',
+            survey_data: row.temperatureData
+          })
+        }
+      }
+
+      // 验证是否有数据需要提交
+      if (submitData.length === 0) {
+        this.$message.warning('请至少填写一项测量数据')
+        return
+      }
+
+      this.measureLoading = true
+      try {
+        await submitMeasureData(submitData)
+        this.$message.success('测量数据提交成功')
+        this.measureDialogVisible = false
+        this.getAnimalList() // 刷新列表
+        this.$refs.table.clearSelection()
+      } catch (error) {
+        console.error('测量数据提交失败:', error)
+        this.$message.error(error.message || '测量数据提交失败')
+      } finally {
+        this.measureLoading = false
+      }
+    },
+
+    // 处理提交工单按钮点击
+    handleWorkOrder() {
+      // TODO: 实现提交工单功能
+      this.$message.info('提交工单功能开发中...')
+    },
+
+    // 获取疾病类型列表
+    async getDiseaseTypeList() {
+      try {
+        const res = await getAnimalDiseaseType()
+        if (res && res.data) {
+          this.diseaseTypeOptions = res.data.map(item => ({
+            label: item.name,
+            value: item.id
+          }))
+        }
+      } catch (error) {
+        console.error('获取疾病类型失败:', error)
+        this.$message.error('获取疾病类型失败')
+      }
+    },
+
+    // 获取治疗方案列表
+    async getTreatmentPlanList() {
+      try {
+        const res = await getTreatmentPlan()
+        if (res && res.data) {
+          this.treatmentPlanOptions = res.data.map(item => ({
+            label: item.medicine,
+            value: item.id
+          }))
+        }
+      } catch (error) {
+        console.error('获取治疗方案失败:', error)
+        this.$message.error('获取治疗方案失败')
+      }
+    },
+
+    // 处理生物治疗按钮点击
+    async handleTreatment() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择需要治疗的动物')
+        return
+      }
+      if (this.selectedRows.length > 1) {
+        this.$message.warning('一次只能治疗一个动物')
+        return
+      }
+
+      // 获取选中的动物信息
+      const selectedAnimal = this.selectedRows[0]
+      
+      // 初始化表单数据
+      this.treatmentForm = {
+        disease_id: '',
+        treatment_id: '',
+        description: '',
+        animal_id: selectedAnimal.animalId,
+        cage_id: selectedAnimal.cageId
+      }
+
+      // 获取疾病类型和治疗方案
+      await this.getDiseaseTypeList()
+      await this.getTreatmentPlanList()
+      
+      this.treatmentDialogVisible = true
+    },
+
+    // 处理生物治疗弹窗关闭
+    handleTreatmentDialogClose() {
+      this.treatmentForm = {
+        disease_id: '',
+        treatment_id: '',
+        description: '',
+        animal_id: '',
+        cage_id: ''
+      }
+    },
+
+    // 提交生物治疗
+    async submitTreatment() {
+      if (!this.treatmentForm.disease_id) {
+        this.$message.warning('请选择疾病类型')
+        return
+      }
+      if (!this.treatmentForm.treatment_id) {
+        this.$message.warning('请选择治疗方案')
+        return
+      }
+
+      this.treatmentLoading = true
+      try {
+        await diseaseTreatment(this.treatmentForm)
+        this.$message.success('治疗记录提交成功')
+        this.treatmentDialogVisible = false
+        this.getAnimalList() // 刷新列表
+        this.$refs.table.clearSelection()
+      } catch (error) {
+        console.error('治疗记录提交失败:', error)
+        this.$message.error(error.message || '治疗记录提交失败')
+      } finally {
+        this.treatmentLoading = false
+      }
     },
   }
 }
@@ -852,5 +1401,69 @@ export default {
 
 ::v-deep .el-dialog__body {
   padding: 20px 30px;
+}
+
+.edit-table-container {
+  margin: -20px;
+}
+
+.edit-table-container .el-select {
+  width: 100%;
+}
+
+.edit-table-container .el-date-picker {
+  width: 100%;
+}
+
+.edit-table-container .el-input {
+  width: 100%;
+}
+
+::v-deep .edit-table-container .el-table td {
+  padding: 5px;
+}
+
+/* 编辑表格行样式 */
+::v-deep .edit-table-container .male-row {
+  background-color: #e6f1fc !important;
+}
+
+::v-deep .edit-table-container .female-row {
+  background-color: #fde9f2 !important;
+}
+
+::v-deep .edit-table-container .el-table__row:hover > td {
+  background-color: #f5f7fa !important;
+}
+
+/* 修改状态弹窗样式 */
+.status-dialog .el-select {
+  width: 100%;
+}
+
+/* 测量数据弹窗样式 */
+.measure-dialog .el-input {
+  width: 100%;
+}
+
+::v-deep .measure-dialog .el-table .el-input.is-disabled .el-input__inner {
+  color: #606266;
+}
+
+::v-deep .measure-dialog .el-table {
+  margin-bottom: 20px;
+}
+
+::v-deep .measure-dialog .el-table--border {
+  border-right: 1px solid #EBEEF5;
+}
+
+/* 根据性别设置行背景色 */
+::v-deep .measure-dialog .male-row {
+  background-color: #e6f1fc !important;
+}
+
+::v-deep .measure-dialog .female-row {
+  background-color: #fde9f2 !important;
 }
 </style>

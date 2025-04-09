@@ -242,7 +242,7 @@
                 </div>
               </div>
               <div class="target-cage">
-                <h4>目标笼盒信息</h4>
+                <h4>目标笼位信息</h4>
                 <div class="cage-info">
                   <p>位置：{{ targetCage.position }}</p>
                   <p>笼架：{{ selectedRack ? selectedRack.label : '' }}</p>
@@ -354,8 +354,12 @@
                 </el-form-item>
                 <el-form-item label="异常类型" prop="abnormality">
                   <el-select v-model="abnormalForm.abnormality" placeholder="请选择异常类型" style="width: 100%">
-                    <el-option label="饲养异常" value="饲养异常"></el-option>
-                    <el-option label="繁殖异常" value="繁殖异常"></el-option>
+                    <el-option
+                      v-for="item in abnormalTypes"
+                      :key="item.id"
+                      :label="item.abnormality_type"
+                      :value="item.abnormality_type">
+                    </el-option>
                   </el-select>
                 </el-form-item>
                 <el-form-item label="图片" prop="images">
@@ -447,6 +451,7 @@ import {
 } from '@/api/ani_manage';
 import { getAnimalStatus } from '@/api/ani_setting';
 import { feedAbnormal } from '@/api/ani_manage';
+import { getFeedAbnormalType } from '@/api/ani_manage';
 
 export default {
   components: {
@@ -591,6 +596,7 @@ export default {
       fileList: [], // 文件列表
       authDialogVisible: false, // 笼位授权弹窗显示状态
       selectedAuthUserId: null, // 选中的授权用户ID
+      abnormalTypes: [], // 存储异常类型列表
     };
   },
   created() {
@@ -1892,7 +1898,7 @@ export default {
     },
 
     // 处理饲养异常按钮点击
-    handleAbnormal() {
+    async handleAbnormal() {
       if (!this.currentSelectedCage.isSelected) {
         this.$message.warning('请先选择笼子');
         return;
@@ -1902,6 +1908,9 @@ export default {
         this.$message.warning('未获取到笼子ID');
         return;
       }
+
+      // 获取异常类型列表
+      await this.getAbnormalTypes();
 
       // 设置位置信息
       this.abnormalForm = {
@@ -2047,6 +2056,20 @@ export default {
     getCellContact(row, col) {
       const cageInfo = this.cageInfoList.find(cage => cage.number === (row - 1) * this.columns.length + (col.charCodeAt(0) - 'A'.charCodeAt(0)));
       return cageInfo ? cageInfo.user : '';
+    },
+    // 获取异常类型列表
+    async getAbnormalTypes() {
+      try {
+        const response = await getFeedAbnormalType();
+        if (response.status === 1 && response.data) {
+          this.abnormalTypes = response.data;
+        } else {
+          this.$message.error('获取异常类型列表失败');
+        }
+      } catch (error) {
+        console.error('获取异常类型列表失败:', error);
+        this.$message.error('获取异常类型列表失败');
+      }
     },
   },
   watch: {
