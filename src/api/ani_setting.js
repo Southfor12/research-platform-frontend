@@ -202,7 +202,7 @@ export function getAnimalTypeByName(params) {
 //根据名称模糊查询动物疾病
 export function getAnimalDiseaseByName(params) {
   return request({
-    url: '/animal/set/animaldisease/name',
+    url: '/animal/set/animaldisease/name', 
     method: 'get',
     params
   })
@@ -210,8 +210,8 @@ export function getAnimalDiseaseByName(params) {
 
 //根据名称模糊查询动物处死原因
 export function getAnimalDeathReasonByName(params) {
-  return request({
-    url: '/animal/set/executionreason/name',
+  return request({        
+    url: '/animal/set/executionreason/name', 
     method: 'get',
     params
   })
