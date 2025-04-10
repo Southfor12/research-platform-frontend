@@ -111,6 +111,16 @@ const feed = {
             activeClass: 'apparatus'
         }
     },
+    {
+        path: '/admin/feed/feed_statistics',
+        name: '饲养统计',
+        component: () => import('@/views/admin/feed/feed-statistics/index'),
+        meta: {
+            title: '饲养统计',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
     ]
 }
 

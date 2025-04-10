@@ -139,6 +139,8 @@
             <el-button type="primary" size="small" icon="el-icon-user" @click="handleAuthorization">笼位授权</el-button>
             <el-button type="primary" size="small" icon="el-icon-close" @click="handleCancelAuthorization">取消授权</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">打印笼架</el-button>
+            <el-button type="primary" size="small" icon="el-icon-user" @click="handleRackAuthorization">笼架授权</el-button>
+            <el-button type="primary" size="small" icon="el-icon-close" @click="handleCancelRackAuthorization">取消所有</el-button>
           </div>
 
           <!-- 色卡提示区域 -->
@@ -226,47 +228,14 @@
           </el-dialog>
 
           <!-- 移动笼盒弹窗 -->
-          <el-dialog title="移动笼盒" :visible.sync="moveCageDialogVisible" width="80%" :close-on-click-modal="false"
-            :close-on-press-escape="false" :show-close="false">
-            <div class="move-cage-container">
-              <div class="source-cage">
-                <h4>源笼盒信息</h4>
-                <div class="cage-info">
-                  <p>笼盒名称：{{ sourceCageBoxInfo ? sourceCageBoxInfo.name : '-' }}</p>
-                  <p>笼盒ID：{{ sourceCageBoxInfo ? sourceCageBoxInfo.id : '-' }}</p>
-                  <p>笼盒类型：{{ sourceCageBoxInfo ? sourceCageBoxInfo.box_type : '-' }}</p>
-                  <p>位置：{{ currentSelectedCage.position }}</p>
-                  <p>笼架：{{ selectedRack ? selectedRack.label : '' }}</p>
-                  <p>动物数量：{{ sourceCageBoxInfo ? sourceCageBoxInfo.animal_count : 0 }}</p>
-                  <p>价格：{{ sourceCageBoxInfo ? sourceCageBoxInfo.price : 0 }}</p>
-                </div>
-              </div>
-              <div class="target-cage">
-                <h4>目标笼位信息</h4>
-                <div class="cage-info">
-                  <p>位置：{{ targetCage.position }}</p>
-                  <p>笼架：{{ selectedRack ? selectedRack.label : '' }}</p>
-                  <p>动物数量：{{ getCageAnimalCount(targetCage.numbers) }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 目标笼盒选择表格 -->
-            <div class="target-cage-selection">
-              <h4>选择目标笼盒</h4>
-              <el-table :data="tableData" style="width: 100%; padding-left: 80px"
-                :cell-class-name="getTargetCellClassName" @cell-click="handleTargetCellClick">
-                <el-table-column prop="row" label="#" width="50"></el-table-column>
-                <el-table-column v-for="col in columns" :key="col" :prop="col" :label="col"
-                  width="100"></el-table-column>
-              </el-table>
-            </div>
-
-            <div slot="footer" class="dialog-footer">
-              <el-button @click="handleMoveCageDialogClose">取 消</el-button>
-              <el-button type="primary" @click="confirmMoveCage" :disabled="!targetCage.position">确 定</el-button>
-            </div>
-          </el-dialog>
+          <move-cage-dialog
+            :visible.sync="moveCageDialogVisible"
+            :source-cage-box-info="sourceCageBoxInfo"
+            :source-position="currentSelectedCage.position"
+            :source-rack-label="selectedRack ? selectedRack.label : ''"
+            :source-cage-id="currentCageId"
+            @move-success="handleMoveSuccess"
+          />
 
           <!-- 修改状态弹窗 -->
           <el-dialog title="修改状态" :visible.sync="statusDialogVisible" width="500px" :close-on-click-modal="false"
@@ -413,6 +382,60 @@
               <el-button type="primary" @click="confirmAuthorization">确 定</el-button>
             </div>
           </el-dialog>
+
+          <!-- 笼架授权弹窗 -->
+          <el-dialog title="笼架授权" :visible.sync="rackAuthDialogVisible" width="800px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
+            <div class="auth-dialog-content">
+              <div class="cage-info">
+                <span class="label">当前笼架：</span>
+                <span class="value">{{ selectedRack ? selectedRack.label : '' }}</span>
+              </div>
+              <div class="user-select">
+                <span class="label">选择用户：</span>
+                <el-select v-model="selectedRackAuthUserId" filterable remote reserve-keyword placeholder="请输入用户姓名搜索"
+                  :remote-method="remoteSearch" :loading="loading" style="width: 100%">
+                  <el-option v-for="item in contactOptions" :key="item.id" :label="item.name" :value="item.id">
+                  </el-option>
+                </el-select>
+              </div>
+              
+              <!-- 已授权笼位信息表格 -->
+              <div class="reserved-cages-table">
+                <h4>已授权笼位信息</h4>
+                <el-table :data="reservedCages" style="width: 100%" border>
+                  <el-table-column prop="number" label="笼位编号" width="100" align="center"></el-table-column>
+                  <el-table-column prop="user_name" label="授权用户" width="120" align="center"></el-table-column>
+                  <el-table-column prop="research_group_name" label="研究组" width="150" align="center">
+                    <template slot-scope="scope">
+                      {{ scope.row.research_group_name || '暂无' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="animal_count" label="动物数量" width="100" align="center">
+                    <template slot-scope="scope">
+                      <span :class="{ 'negative-count': scope.row.animal_count < 0 }">
+                        {{ scope.row.animal_count }}
+                      </span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="cage_box_name" label="笼盒名称" width="150" align="center">
+                    <template slot-scope="scope">
+                      {{ scope.row.cage_box_name || '暂无' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="care_order_id" label="订单号" width="120" align="center">
+                    <template slot-scope="scope">
+                      {{ scope.row.care_order_id || '暂无' }}
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="rackAuthDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="confirmRackAuthorization">确 定</el-button>
+            </div>
+          </el-dialog>
         </div>
       </el-main>
     </el-container>
@@ -448,14 +471,18 @@ import {
   updateCageBoxInfo,
   cageAuthorization,
   cancelAuthorization,
+  getReservedCage,
+  cancelRackAuthorization,
 } from '@/api/ani_manage';
 import { getAnimalStatus } from '@/api/ani_setting';
 import { feedAbnormal } from '@/api/ani_manage';
 import { getFeedAbnormalType } from '@/api/ani_manage';
+import MoveCageDialog from './move-cage-dialog.vue';
 
 export default {
   components: {
     Empty,
+    MoveCageDialog
   },
   data() {
     return {
@@ -597,6 +624,9 @@ export default {
       authDialogVisible: false, // 笼位授权弹窗显示状态
       selectedAuthUserId: null, // 选中的授权用户ID
       abnormalTypes: [], // 存储异常类型列表
+      rackAuthDialogVisible: false, // 笼架授权弹窗显示状态
+      selectedRackAuthUserId: null, // 选中的笼架授权用户ID
+      reservedCages: [], // 存储已授权的笼位信息
     };
   },
   created() {
@@ -1330,16 +1360,34 @@ export default {
 
         if (cageBoxRes.status === 1 && cageBoxRes.data) {
           this.sourceCageBoxInfo = cageBoxRes.data;
+          this.moveCageDialogVisible = true;
         } else {
           this.$message.warning('获取源笼盒信息失败');
           return;
         }
-
-        this.moveCageDialogVisible = true;
       } catch (error) {
         console.error('获取源笼盒信息失败:', error);
         this.$message.error('获取源笼盒信息失败');
       }
+    },
+
+    // 处理移动成功
+    async handleMoveSuccess() {
+      // 刷新笼架数据
+      if (this.selectedRack && this.selectedRack.id) {
+        await this.getCageUsed_(this.selectedRack.id);
+      }
+      
+      // 重置选中状态
+      this.currentSelectedCage = {
+        isSelected: false,
+        position: '',
+        row: null,
+        column: '',
+        index: null,
+        numbers: null,
+      };
+      this.currentCageId = null;
     },
 
     // 处理移动笼盒对话框关闭
@@ -2071,6 +2119,100 @@ export default {
         this.$message.error('获取异常类型列表失败');
       }
     },
+    // 处理笼架授权按钮点击
+    async handleRackAuthorization() {
+      if (!this.selectedRack || !this.selectedRack.id) {
+        this.$message.warning('请先选择笼架');
+        return;
+      }
+
+      try {
+        // 获取所有用户列表
+        const response = await allUsers();
+        if (response.status === 200 && response.data.users) {
+          this.contactOptions = response.data.users;
+        } else {
+          this.$message.warning('获取用户列表失败');
+          return;
+        }
+
+        // 获取已授权的笼位信息
+        const reservedResponse = await getReservedCage({
+          cage_rack_id: this.selectedRack.id
+        });
+
+        if (reservedResponse.status === 1 && reservedResponse.data) {
+          this.reservedCages = reservedResponse.data;
+        } else {
+          this.$message.warning('获取已授权笼位信息失败');
+          return;
+        }
+
+        this.selectedRackAuthUserId = null;
+        this.rackAuthDialogVisible = true;
+      } catch (error) {
+        console.error('获取信息失败:', error);
+        this.$message.error('获取信息失败');
+      }
+    },
+
+    // 确认笼架授权
+    async confirmRackAuthorization() {
+      if (!this.selectedRackAuthUserId) {
+        this.$message.warning('请选择要授权的用户');
+        return;
+      }
+
+      try {
+        const response = await cageAuthorization({
+          cage_id: this.selectedRack.id,
+          user_id: this.selectedRackAuthUserId
+        });
+
+        if (response.status === 1) {
+          this.$message.success('笼架授权成功');
+          this.rackAuthDialogVisible = false;
+
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '笼架授权失败');
+        }
+      } catch (error) {
+        console.error('笼架授权失败:', error);
+        this.$message.error('笼架授权失败');
+      }
+    },
+
+    // 处理取消笼架授权按钮点击
+    async handleCancelRackAuthorization() {
+      if (!this.selectedRack || !this.selectedRack.id) {
+        this.$message.warning('请先选择笼架');
+        return;
+      }
+
+      try {
+        const response = await cancelRackAuthorization({
+          cage_rack_id: this.selectedRack.id
+        });
+
+        if (response.status === 1) {
+          this.$message.success('取消所有授权成功');
+          
+          // 刷新笼架数据
+          if (this.selectedRack && this.selectedRack.id) {
+            await this.getCageUsed_(this.selectedRack.id);
+          }
+        } else {
+          this.$message.error(response.msg || '取消所有授权失败');
+        }
+      } catch (error) {
+        console.error('取消所有授权失败:', error);
+        this.$message.error('取消所有授权失败');
+      }
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -2780,5 +2922,58 @@ export default {
 .el-table td {
   height: 60px;
   padding: 4px !important;
+}
+
+/* 已授权笼位信息表格样式 */
+.reserved-cages-table {
+  margin-top: 20px;
+}
+
+.reserved-cages-table h4 {
+  margin-bottom: 15px;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.negative-count {
+  color: #F56C6C;
+  font-weight: bold;
+}
+
+/* 调整弹窗内容样式 */
+.auth-dialog-content {
+  padding: 20px;
+}
+
+.auth-dialog-content .cage-info,
+.auth-dialog-content .user-select {
+  margin-bottom: 20px;
+}
+
+.auth-dialog-content .label {
+  font-weight: bold;
+  margin-right: 10px;
+  display: inline-block;
+  width: 80px;
+}
+
+.auth-dialog-content .value {
+  color: #606266;
+}
+
+/* 表格样式调整 */
+.el-table {
+  margin-top: 10px;
+}
+
+.el-table th {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: 600;
+}
+
+.el-table td {
+  padding: 8px 0;
 }
 </style>

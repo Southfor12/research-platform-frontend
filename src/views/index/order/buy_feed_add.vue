@@ -31,6 +31,27 @@
     <br />
     <br />
 
+    <div style="font-weight: bolder">所属课题组</div>
+    <hr />
+    <el-form :model="submitform" :rules="rules" ref="form">
+      <el-col>
+        <el-form-item label="课题组" prop="research_group_name">
+          <el-select v-model="submitform.research_group_name" size="big" class="width-200">
+            <el-option 
+              v-for="item in researchGroupList" 
+              :key="item" 
+              :label="item" 
+              :value="item">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-col>
+    </el-form>
+
+    <br />
+    <br />
+    <br />
+
     <div style="font-weight: bolder">动物明细</div>
     <hr />
     <!-- 表格布局 -->
@@ -287,7 +308,7 @@ import { getAnimalStrain, getAnimalTypeById } from '@/api/ani_setting';
 import { getAnimalType } from '@/api/ani_setting';
 import { getCourtyard, getTenement, getLaboratory, getRack } from '@/api/colleges';
 import { getCageused, AddFeed } from '@/api/order';
-import { getCageNumber, getLockedCageNumber } from '@/api/ani_manage';
+import { getCageNumber, getLockedCageNumber, getResearchGroupName } from '@/api/ani_manage';
 import Empty from '@/components/Empty';
 import store from '@/store';
 import { getCageBoxList } from '@/api/cage_box';
@@ -354,6 +375,7 @@ export default {
         cage_number: [],
         cage_box_type: '', // 新增笼盒类型
         cage_box_price: 0, // 新增笼盒价格
+        research_group_name: '', // 新增课题组名称
         animals: [
           {
             name: '',
@@ -385,6 +407,7 @@ export default {
       ],
       cageBoxList: [], // 新增笼盒列表
       feedPrice: 0, // 新增饲养价格
+      researchGroupList: [], // 课题组列表
     };
   },
   watch: {
@@ -998,6 +1021,18 @@ export default {
       this.$forceUpdate(); // 强制更新视图，重新计算总价格
     },
 
+    // 获取课题组列表
+    async getResearchGroupList() {
+      try {
+        const res = await getResearchGroupName({ user_id: store.getters.member.id })
+        if (res.status === 1) {
+          this.researchGroupList = res.data
+        }
+      } catch (error) {
+        console.error('获取课题组列表失败:', error)
+      }
+    },
+
     // 初始化数据
     async init() {
       try {
@@ -1006,7 +1041,8 @@ export default {
           this.getTenementList(), 
           this.getLaboratoryList(),
           this.getCageBoxList(), // 新增获取笼盒列表
-          this.getFeedPrice() // 新增获取饲养价格
+          this.getFeedPrice(), // 新增获取饲养价格
+          this.getResearchGroupList() // 新增获取课题组列表
         ]);
         this.AllcampusList = this.campusList;
         this.AlltenementList = this.tenementList;

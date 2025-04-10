@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+// 这里是饲养繁育的应用设置中涉及到的api接口
 
 //获取所有的动物类型
 export function getAnimalType(params) {
@@ -280,7 +281,85 @@ export function getAnimalTypeByStrainId(params) {
   })
 }
 
+// 获取所有笼盒
+export function getFeedCaseList(params) {
+  return request({
+    url: '/animal/set/feedcase/all',
+    method: 'get',
+    params
+  })
+}
 
+// 根据id查询笼盒
+export function getFeedCaseById(params) {
+  return request({
+    url: '/animal/set/feedcase/' + params.id,
+    method: 'get',
+    params
+  })
+}
 
+// 新建笼盒
+export function createFeedCase(params) {
+  return request({
+    url: '/animal/set/feedcase',
+    method: 'post',
+    data: params
+  })
+}
+
+// 删除笼盒
+export function deleteFeedCase(params) {
+  return request({
+    url: '/animal/set/feedcase',
+    method: 'delete',
+    params
+  })
+}
+
+// 编辑笼盒
+export function updateFeedCase(params) {
+  return request({
+    url: '/animal/set/feedcase',
+    method: 'put',
+    data: params
+  })
+}
+
+// 根据名称查询笼盒
+export function getFeedCaseByName(params) {
+  return request({
+    url: '/animal/set/feedcase/name',
+    method: 'get',
+    params
+  })
+}
+
+//分页查询饲养笼盒
+export function getFeedCasePage(params) {
+  return request({
+    url: '/animal/fac/cagebox/page',
+    method: 'get',
+    params
+  })
+}
+
+//查询所有的笼盒类型
+export function getFeedCaseType(params) {
+  return request({
+    url: '/animal/set/cageboxtype/all',
+    method: 'get',
+    params
+  })
+}
+
+//新增笼盒
+export function addFeedCase(params) {
+  return request({
+    url: '/animal/fac/cagebox/',
+    method: 'post',
+    data: params
+  })
+}
 
 

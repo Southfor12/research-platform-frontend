@@ -350,7 +350,65 @@ export function addSperm(data) {
     })
 }
 
+//获取饲养统计数据
+export function getFeedStatistics(params) {
+    return request({
+        url: '/animal/care/feedingstatistics/getfeedingstatisticscount',
+        method: 'get',
+        params
+    })
+}
 
+//按照房间获取饲养统计数据
+export function getFeedStatisticsByRoom(params) {
+    return request({
+        url: '/animal/care/feedingstatistics/getRoomAndCageInformation',
+        method: 'get',
+        params
+    })
+}
 
+//按照联系人获取饲养统计数据
+export function getFeedStatisticsByContact(params) {
+    return request({
+        url: '/animal/care/feedingstatistics/getByUser',
+        method: 'get',
+        params
+    })
+}
 
+//查询课题组名
+export function getResearchGroupName(params) {
+    return request({
+        url: '/animal/ord/care/getresearchGroupName',
+        method: 'get',
+        params
+    })
+}
 
+//饲养统计中的按照课题组统计
+export function getFeedStatisticsByResearchGroup(params) {
+    return request({
+        url: '/animal/care/feedingstatistics/getByGroup',
+        method: 'get',
+        params
+    })
+}
+
+//笼架授权查询已经自持的笼位
+export function getReservedCage(params) {
+    return request({
+        url: '/animal/fac/cage/reserved',
+        method: 'get',
+        params
+    })
+}
+
+//取消笼架授权
+export function cancelRackAuthorization(params) {
+    return request({
+        url: '/animal/fac/cage/cancelreserved',
+        method: 'put',
+        params
+    })  
+}
