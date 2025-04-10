@@ -8,7 +8,7 @@ export function orderList(params) {
   })
 }
 
-
+//获取饲养笼子已经被使用情况
 export function getCageused(params) {
   return request({
     url: '/animal/fac/cage/used',
@@ -307,5 +307,14 @@ export function addCageOrder(params) {
     url: '/animal/ord/cagebooking/all',
     method: 'get',
     data: params
+  });
+}
+
+//笼子预约
+export function addCageOrder2(data) { 
+  return request({
+    url: '/animal/ord/cagebooking',
+    method: 'post',
+    data: data
   });
 }

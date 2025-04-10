@@ -20,6 +20,16 @@ export default {
     components:{
         index,
     },
+    data() {
+        return {
+            activeTab: 'strain_manage'
+        }
+    },
+    methods: {
+        handleTabClick(tab) {
+            // 可以在这里处理标签页切换的逻辑
+        }
+    }
 }
 </script>
 

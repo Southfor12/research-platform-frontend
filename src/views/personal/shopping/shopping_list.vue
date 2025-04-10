@@ -143,7 +143,7 @@
             <el-table-column prop="animal_type" label="动物类型" />
             <el-table-column prop="area_type" label="区域" />
             <el-table-column prop="count" label="数量" />
-
+            <el-table-column prop="price" label="单价" />
             <el-table-column prop="description" label="描述" />
 
             <el-table-column width="180" label="操作" header-align="left">
@@ -157,10 +157,10 @@
               </template>
             </el-table-column>
           </el-table>
-          <!-- <div style="font-size: 18px; color: #333; margin-top: 20px; float: right">
+          <div style="font-size: 18px; color: #333; margin-top: 20px; float: right">
             订单总额:
             <span style="color: red; font-weight: bold; font-size: 22px">{{ totalFeedPrice }}</span>
-          </div> -->
+          </div>
           <br />
           <br />
           <br />
@@ -403,6 +403,7 @@ export default {
                 animal_type: ress.data.animal_type,
                 room_id: ress.data.room_id,
                 area_type: ress.data.area_type,
+                price: item.price, // 确保价格字段被正确传递
               };
             })
           );
