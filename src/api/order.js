@@ -185,9 +185,17 @@ export function getFeedOrder(params) {
 
 
 
+// export function delFeedOrder(params) {
+//   return request({
+//     url: '/animal/ord/tech/all',
+//     method: 'delete',
+//     params
+//   })
+// }
+
 export function delFeedOrder(params) {
   return request({
-    url: '/animal/ord/tech/all',
+    url: '/animal/ord/care',
     method: 'delete',
     params
   })

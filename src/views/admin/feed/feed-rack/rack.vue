@@ -53,6 +53,7 @@
                 <el-checkbox label="team">课题组</el-checkbox>
                 <el-checkbox label="price">价格</el-checkbox>
                 <el-checkbox label="orderNumber">订单号</el-checkbox>
+                <el-checkbox label="researchGroup">课题组</el-checkbox>
               </el-checkbox-group>
             </el-col>
 
@@ -96,6 +97,7 @@
                     <div class="cell-info">
                       <span class="cell-position">{{ scope.row[col] }}</span>
                       <span v-if="getCellContact(scope.row.row, col)" class="cell-contact">{{ getCellContact(scope.row.row, col) }}</span>
+                      <span v-if="getCellResearchGroup(scope.row.row, col)" class="cell-research-group">{{ getCellResearchGroup(scope.row.row, col) }}</span>
                     </div>
                   </div>
                 </el-tooltip>
@@ -108,6 +110,7 @@
                   <div class="cell-info">
                     <span class="cell-position">{{ scope.row[col] }}</span>
                     <span v-if="getCellContact(scope.row.row, col)" class="cell-contact">{{ getCellContact(scope.row.row, col) }}</span>
+                    <span v-if="getCellResearchGroup(scope.row.row, col)" class="cell-research-group">{{ getCellResearchGroup(scope.row.row, col) }}</span>
                   </div>
                 </div>
               </template>
@@ -630,6 +633,7 @@ export default {
     };
   },
   created() {
+    console.log('cageFields:', this.cageFields);
     this.init();
   },
   methods: {
@@ -747,42 +751,44 @@ export default {
           getCageused({ cage_rack_id: id, hideSuccess: true })
             .then((res) => {
               this.activecage = res.data;
-              // 获取笼子的详细信息
               getCageAll({ cage_rack_id: id, hideSuccess: true })
                 .then(async (cageRes) => {
-                  // 获取每个笼子的联系人信息
                   const cageInfoWithContacts = await Promise.all(
                     cageRes.data.map(async (cage) => {
                       if (cage.animal_count > 0) {
                         try {
-                          // 获取笼盒ID
                           const cageBoxRes = await getCageBoxId({
                             cage_id: cage.id,
                             hideSuccess: true
                           });
                           
                           if (cageBoxRes.data && cageBoxRes.data.id) {
-                            // 获取订单信息
                             const orderRes = await getOrderInfo({
                               cage_id: cage.id,
                               hideSuccess: true
                             });
                             
-                            if (orderRes.data && orderRes.data.user) {
+                            // 添加日志检查数据
+                            console.log('订单信息:', orderRes.data);
+                            
+                            if (orderRes.data) {
                               return {
                                 ...cage,
-                                user: orderRes.data.user
+                                user: orderRes.data.user,
+                                research_group_name: orderRes.data.research_group_name
                               };
                             }
                           }
                         } catch (error) {
-                          console.error('获取联系人信息失败:', error);
+                          console.error('获取信息失败:', error);
                         }
                       }
                       return cage;
                     })
                   );
                   
+                  // 添加日志检查最终数据
+                  console.log('cageInfoList:', cageInfoWithContacts);
                   this.cageInfoList = cageInfoWithContacts;
                   resolve();
                 })
@@ -813,7 +819,8 @@ export default {
       }
 
       if (nodeData.level === 4) {
-        this.selectedRack = nodeData; // 选择当前笼架
+        console.log('选择笼架:', nodeData);
+        this.selectedRack = nodeData;
         this.showEditButton = true; // 显示修改按钮
         this.tableHeight = nodeData.height; // 设置表格高度
         this.tableWidth = nodeData.width; // 设置表格宽度
@@ -825,14 +832,10 @@ export default {
         this.showTable = true; // 显示表格
         this.generateTableData(); // 生成表格
         this.getCageUsed_(nodeData.id).then(() => {
-          for (let i = 0; i < this.activecage.length; i++) {
-            const row = this.tableData[Math.floor(this.activecage[i] / this.columns.length)]; // 获取特定行的数据
-            const column = this.columns.find(
-              (col) =>
-                col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
-            ); // 获取特定列的名字
-            this.handleCellClick(row, { property: column });
-          }
+          console.log('笼架数据加载完成:', {
+            cageInfoList: this.cageInfoList,
+            activecage: this.activecage
+          });
         });
       } else {
         this.selectedRack = null;
@@ -2200,11 +2203,8 @@ export default {
 
         if (response.status === 1) {
           this.$message.success('取消所有授权成功');
-          
-          // 刷新笼架数据
-          if (this.selectedRack && this.selectedRack.id) {
-            await this.getCageUsed_(this.selectedRack.id);
-          }
+          // 添加强制刷新页面
+          window.location.reload();
         } else {
           this.$message.error(response.msg || '取消所有授权失败');
         }
@@ -2212,6 +2212,13 @@ export default {
         console.error('取消所有授权失败:', error);
         this.$message.error('取消所有授权失败');
       }
+    },
+    // 添加获取课题组信息的方法
+    getCellResearchGroup(row, col) {
+      const cageInfo = this.cageInfoList.find(cage => 
+        cage.number === (row - 1) * this.columns.length + (col.charCodeAt(0) - 'A'.charCodeAt(0))
+      );
+      return cageInfo ? cageInfo.research_group_name : '';
     },
   },
   watch: {
@@ -2904,7 +2911,7 @@ export default {
 /* 调整单元格内容的布局 */
 .cell-content {
   padding: 4px;
-  min-height: 50px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2920,7 +2927,7 @@ export default {
 
 /* 确保表格单元格有足够的高度 */
 .el-table td {
-  height: 60px;
+  height: 70px;
   padding: 4px !important;
 }
 
@@ -2975,5 +2982,17 @@ export default {
 
 .el-table td {
   padding: 8px 0;
+}
+
+/* 添加课题组信息的样式 */
+.cell-research-group {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block; /* 确保元素显示 */
 }
 </style>

@@ -407,7 +407,7 @@ export function getReservedCage(params) {
 //取消笼架授权
 export function cancelRackAuthorization(params) {
     return request({
-        url: '/animal/fac/cage/cancelreserved',
+        url: '/animal/fac/cage/cancelallreserved',
         method: 'put',
         params
     })  

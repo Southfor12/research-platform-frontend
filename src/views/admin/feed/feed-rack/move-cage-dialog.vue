@@ -350,10 +350,8 @@ export default {
     // 处理节点点击
     async handleCategoryClick(nodeData) {
       if (nodeData.level === 4) {
-        // 重置所有状态，但保留源笼盒位置信息
-        const sourcePosition = { ...this.sourceCagePosition };
+        // 重置所有状态，包括源笼盒位置信息
         this.resetAllState();
-        this.sourceCagePosition = sourcePosition;
         
         this.selectedRack = nodeData;
         this.showTargetTable = true;
@@ -373,10 +371,8 @@ export default {
         // 获取笼架使用情况
         await this.getCageUsed(nodeData.id);
       } else {
-        // 重置所有状态，但保留源笼盒位置信息
-        const sourcePosition = { ...this.sourceCagePosition };
+        // 重置所有状态，包括源笼盒位置信息
         this.resetAllState();
-        this.sourceCagePosition = sourcePosition;
       }
     },
 
@@ -395,7 +391,12 @@ export default {
         id: null
       };
       this.cageInfoList = [];
-      // 不重置源笼盒位置信息，由调用者决定是否保留
+      // 重置源笼盒位置信息
+      this.sourceCagePosition = {
+        row: null,
+        column: '',
+        position: ''
+      };
     },
 
     // 生成表格数据
@@ -667,6 +668,7 @@ export default {
   justify-content: center;
   padding: 2px;
   padding-top: 18px;
+  min-height: 60px;
 }
 
 .move-cage-dialog .has-cage {
@@ -711,6 +713,7 @@ export default {
   align-items: center;
   justify-content: center;
   width: 100%;
+  gap: 2px;
 }
 
 .move-cage-dialog .cell-position {
@@ -722,11 +725,28 @@ export default {
 .move-cage-dialog .cell-contact {
   font-size: 12px;
   color: #606266;
-  margin-top: 2px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 0 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+}
+
+.move-cage-dialog .has-cage .cell-contact {
+  color: #E74C3C;
+  background-color: rgba(231, 76, 60, 0.1);
+}
+
+.move-cage-dialog .source-cage .cell-contact {
+  color: #000;
+  background-color: rgba(255, 215, 0, 0.2);
+}
+
+.move-cage-dialog .target-cage .cell-contact {
+  color: #fff;
+  background-color: rgba(103, 194, 58, 0.2);
 }
 
 .move-cage-dialog .target-selected-cell {
