@@ -671,9 +671,14 @@ export default {
       if (newTab === 'techOrder') this.getTechOrder();
     },
 
-    getAnimalOrder() {
-      getAllAnimalOrder().then((res) => {
-        const promises = res.data.map((item) => {
+    async getAnimalOrder() {
+      try {
+        console.log('Current user:', store.getters.member);
+        console.log('Requesting with user_id:', store.getters.member.id);
+        const res = await getAllAnimalOrder({ user_id: store.getters.member.id });
+        console.log('API Response:', res);
+
+        const promises = res.data.map(async (item) => {
           // 获取动物信息
           const animalPromise = get_a_Animal({ id: item.animal_id })
             .then((ress) => ({
@@ -709,23 +714,24 @@ export default {
         });
 
         // 等待所有 Promise 完成
-        Promise.all(promises).then((data) => {
-          this.animalOrder = data; // 确保所有数据加载完成后再赋值
-          if (store.getters.member.role_id === 13) {
-            this.animalOrder = this.animalOrder.filter((item) => item.status === 1);
-          } else if (store.getters.member.role_id === 14) {
-            this.animalOrder = this.animalOrder.filter((item) => item.status === 2);
-          } else if (store.getters.member.role_id === 12) {
-            this.animalOrder = this.animalOrder.filter((item) => item.status === 3);
-          } else this.animalOrder = [];
-          this.animalOrder.forEach((item) => {
-            console.log(item.status_);
-            item.totalCost = item.price * item.count;
-            item.finalCost = item.totalCost + item.extra;
-            item.status_ = this.animalStutas[item.status];
-          });
+        const data = await Promise.all(promises);
+        this.animalOrder = data; // 确保所有数据加载完成后再赋值
+        if (store.getters.member.role_id === 13) {
+          this.animalOrder = this.animalOrder.filter((item) => item.status === 1);
+        } else if (store.getters.member.role_id === 14) {
+          this.animalOrder = this.animalOrder.filter((item) => item.status === 2);
+        } else if (store.getters.member.role_id === 12) {
+          this.animalOrder = this.animalOrder.filter((item) => item.status === 3);
+        } else this.animalOrder = [];
+        this.animalOrder.forEach((item) => {
+          console.log(item.status_);
+          item.totalCost = item.price * item.count;
+          item.finalCost = item.totalCost + item.extra;
+          item.status_ = this.animalStutas[item.status];
         });
-      });
+      } catch (error) {
+        console.error('Error in getAnimalOrder:', error);
+      }
     },
 
     getFeedOrder() {

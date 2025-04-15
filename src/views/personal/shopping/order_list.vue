@@ -30,7 +30,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="user_name" label="订单客户姓名" width="120" />
-              <el-table-column prop="user_organization_name" label="课程组" width="100" />
+              <el-table-column prop="user_organization_name" label="课题组" width="100" />
               <el-table-column prop="create_time" label="订单时间" width="150" />
               <el-table-column prop="name" label="产品服务" />
               <el-table-column prop="supplier_name" label="供应商" />
@@ -133,7 +133,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="user_name" label="订单客户姓名" width="120" />
-              <el-table-column prop="user_organization_name" label="课程组" width="100" />
+              <el-table-column prop="user_organization_name" label="课题组" width="100" />
               <el-table-column prop="create_time" label="订单时间" width="150" />
               <el-table-column prop="name" label="产品服务" />
               <el-table-column prop="supplier_name" label="供应商" />
@@ -209,7 +209,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="user_name" label="订单客户姓名" width="120" />
-              <el-table-column prop="user_organization_name" label="课程组" width="100" />
+              <el-table-column prop="user_organization_name" label="课题组" width="100" />
               <el-table-column prop="create_time" label="订单时间" width="150" />
               <el-table-column prop="source" label="动物来源" />
               <el-table-column prop="area_type" label="区域" />
@@ -234,9 +234,7 @@
                 <el-form :column="2" border>
                   <el-form-item label="订单编号">{{ selectedOrder.id }}</el-form-item>
                   <el-form-item label="订单客户姓名">{{ selectedOrder.user_name }}</el-form-item>
-                  <el-form-item label="课程组">{{
-                    selectedOrder.user_organization_name
-                  }}</el-form-item>
+                  <el-form-item label="课题组">{{ selectedOrder.user_organization_name }}</el-form-item>
                   <el-form-item label="订单时间">{{ selectedOrder.create_time }}</el-form-item>
                   <el-form-item label="动物来源">{{ selectedOrder.source }}</el-form-item>
                   <el-form-item label="区域">{{ selectedOrder.area_type }}</el-form-item>
@@ -312,7 +310,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="user_name" label="订单客户姓名" width="120" />
-              <el-table-column prop="user_organization_name" label="课程组" width="100" />
+              <el-table-column prop="user_organization_name" label="课题组" width="100" />
               <el-table-column prop="create_time" label="订单时间" width="150" />
               <el-table-column prop="name" label="技术服务" />
               <el-table-column prop="price" label="价格" />
@@ -334,9 +332,7 @@
                 <el-form :column="2" border>
                   <el-form-item label="订单编号">{{ selectedOrder.id }}</el-form-item>
                   <el-form-item label="订单客户姓名">{{ selectedOrder.user_name }}</el-form-item>
-                  <el-form-item label="课程组">{{
-                    selectedOrder.user_organization_name
-                  }}</el-form-item>
+                  <el-form-item label="课题组">{{ selectedOrder.user_organization_name }}</el-form-item>
                   <el-form-item label="订单时间">{{ selectedOrder.create_time }}</el-form-item>
                   <el-form-item label="技术服务">{{ selectedOrder.name }}</el-form-item>
                   <el-form-item label="价格">{{ selectedOrder.price }}</el-form-item>
