@@ -47,29 +47,9 @@
         width="100"
         align="center">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.status === '0' ? 'danger' : 'success'">
-            {{ scope.row.status === '0' ? '未处理' : '已处理' }}
+          <el-tag :type="scope.row.status === false ? 'danger' : 'success'">
+            {{ scope.row.status === false ? '未处理' : '已处理' }}
           </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="操作"
-        width="150"
-        align="center">
-        <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="primary"
-            @click="handleProcess(scope.row)"
-            v-if="scope.row.status === '0'">
-            处理
-          </el-button>
-          <el-button
-            size="mini"
-            type="info"
-            @click="handleDetail(scope.row)">
-            详情
-          </el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -45,7 +45,7 @@ export function cleanRack(params) {
 //更改笼架联系人
 export function updateCageContact(params) {
     return request({
-        url: '/animal/fac/cage/changeuser',
+        url: '/animal/fac/cagebox/changeuser',
         method: 'put',
         params
     })
@@ -412,3 +412,22 @@ export function cancelRackAuthorization(params) {
         params
     })  
 }
+
+//查询用户所拥有的笼盒
+export function getUserCage(params) {
+    return request({
+        url: '/animal/fac/cagebox/getbyuserid',
+        method: 'get',
+        params
+    })
+}
+
+//动物管理之移动笼盒
+export function moveCageBox(data) {
+    return request({
+        url: '/animal/care/animalimport/move',
+        method: 'put',
+        data
+    })
+}
+

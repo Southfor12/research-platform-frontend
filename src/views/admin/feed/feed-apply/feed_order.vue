@@ -27,6 +27,13 @@
           <el-table-column prop="area_type" label="区域" />
           <el-table-column prop="animal_type" label="动物种类" />
           <el-table-column prop="level" label="动物级别" />
+          <el-table-column label="申请数量" width="100">
+            <template #default="scope">
+              <div v-for="(animal, index) in scope.row.animals" :key="index">
+                {{ animal.animal_type }}: {{ animal.count }}只
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column prop="start_time" label="开始时间" />
           <el-table-column prop="end_time" label="结束时间" />
           <el-table-column prop="description" label="备注" />
@@ -202,10 +209,14 @@ export default {
               area_type: ress.data.area_type,
               totalCost,
               finalCost: totalCost,
+              animals: item.animals || [] // 确保 animals 字段存在
             };
           } catch (err) {
             console.error('Error fetching feed details:', err);
-            return item; // Return original item if feed details fetch fails
+            return {
+              ...item,
+              animals: item.animals || [] // 确保 animals 字段存在
+            }; // Return original item if feed details fetch fails
           }
         });
 
@@ -295,7 +306,7 @@ export default {
       }
     },
 
-    // 点击“审核”按钮，打开弹窗
+    // 点击"审核"按钮，打开弹窗
     approveOrder(row) {
       console.log('审核订单:', row);
       this.currentRow = row; // 记录当前审核的行数据

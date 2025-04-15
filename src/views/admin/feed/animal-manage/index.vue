@@ -168,7 +168,7 @@
           <div class="button-group">
             <el-button type="primary" icon="el-icon-delete" plain @click="handleExecute">处死</el-button>
             <el-button type="primary" icon="el-icon-edit" plain @click="handleEdit">编辑</el-button>
-            <el-button type="primary" icon="el-icon-share" plain>移笼/分笼</el-button>
+            <el-button type="primary" icon="el-icon-share" plain @click="handleMove">移笼/分笼</el-button>
             <el-button type="primary" icon="el-icon-setting" plain>基础设置</el-button>
             <el-button type="primary" icon="el-icon-edit" plain @click="handleStatusChange">修改状态</el-button>
             <el-button type="primary" icon="el-icon-connection" plain @click="handleBreeding">配繁</el-button>
@@ -453,6 +453,42 @@
           </div>
         </el-dialog>
 
+        <!-- 移笼/分笼弹窗 -->
+        <el-dialog
+          title="移笼/分笼"
+          :visible.sync="moveDialogVisible"
+          width="500px"
+          :close-on-click-modal="false"
+          @close="handleMoveDialogClose">
+          <el-form :model="moveForm" ref="moveForm" label-width="100px">
+            <el-form-item label="目标笼盒" prop="cage_box_id">
+              <el-select v-model="moveForm.cage_box_id" placeholder="请选择目标笼盒" style="width: 100%">
+                <el-option
+                  v-for="item in cageBoxOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="选中动物">
+              <div class="selected-animals">
+                <el-tag
+                  v-for="id in moveForm.ids"
+                  :key="id"
+                  type="info"
+                  style="margin-right: 5px; margin-bottom: 5px">
+                  {{ id }}
+                </el-tag>
+              </div>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="moveDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="confirmMove" :loading="moveLoading">确 定</el-button>
+          </div>
+        </el-dialog>
+
         <!-- 分页 -->
         <div class="pagination-container">
           <el-pagination
@@ -472,7 +508,7 @@
 
 <script>
 import { getAnimalType, getAnimalStrain, getAnimalDeathReason, getAnimalDiseaseType, getTreatmentPlan } from '@/api/ani_setting'
-import { getAnimalStatus, getAnimalManage, animalDeath, animalManageEdit, updateAnimalStatus2, submitMeasureData, diseaseTreatment } from '@/api/ani_manage'
+import { getAnimalStatus, getAnimalManage, animalDeath, animalManageEdit, updateAnimalStatus2, submitMeasureData, diseaseTreatment, getUserCage, moveCageBox } from '@/api/ani_manage'
 
 export default {
   name: 'AnimalManage',
@@ -561,6 +597,14 @@ export default {
       },
       diseaseTypeOptions: [], // 疾病类型选项
       treatmentPlanOptions: [], // 治疗方案选项
+      // 移笼/分笼相关数据
+      moveDialogVisible: false,
+      moveLoading: false,
+      moveForm: {
+        ids: [],
+        cage_box_id: ''
+      },
+      cageBoxOptions: [], // 笼盒选项
     }
   },
   created() {
@@ -624,18 +668,16 @@ export default {
 
             groupedData.push({
               animalId: item.id,
-              // 添加动物类型字段
               animalType: item.type,
               cageId: item.cage_id,
-              // 添加笼盒名称字段
               cageBoxName: item.cage_box_name,
               strainName: item.strain,
               gender: item.gender,
               birthDate: item.birth_time,
               weekAge: this.calculateWeekAge(item.birth_time),
               status: item.status,
-              // 修改所有者字段来源为user_name
               owner: item.user_name,
+              ownerId: item.user_id,
               color: item.color,
               description: item.description,
               experimentalStatus: item.experimental_status,
@@ -1196,6 +1238,75 @@ export default {
         this.$message.error(error.message || '治疗记录提交失败')
       } finally {
         this.treatmentLoading = false
+      }
+    },
+
+    // 处理移笼/分笼按钮点击
+    async handleMove() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择需要移动的动物')
+        return
+      }
+
+      // 获取选中动物的所有者ID
+      const ownerId = this.selectedRows[0].ownerId
+      if (!ownerId) {
+        this.$message.warning('无法获取动物所有者信息')
+        return
+      }
+
+      // 初始化表单数据
+      this.moveForm = {
+        ids: this.selectedRows.map(row => row.animalId),
+        cage_box_id: ''
+      }
+
+      // 获取用户拥有的笼盒列表
+      try {
+        const res = await getUserCage({ user_id: ownerId })
+        if (res && res.data) {
+          this.cageBoxOptions = res.data.map(item => ({
+            label: `${item.name} (ID: ${item.id})`,
+            value: item.id
+          }))
+        }
+      } catch (error) {
+        console.error('获取笼盒列表失败:', error)
+        this.$message.error('获取笼盒列表失败')
+        return
+      }
+
+      this.moveDialogVisible = true
+    },
+
+    // 处理移笼/分笼弹窗关闭
+    handleMoveDialogClose() {
+      this.moveForm = {
+        ids: [],
+        cage_box_id: ''
+      }
+      this.cageBoxOptions = []
+    },
+
+    // 确认移笼/分笼
+    async confirmMove() {
+      if (!this.moveForm.cage_box_id) {
+        this.$message.warning('请选择目标笼盒')
+        return
+      }
+
+      this.moveLoading = true
+      try {
+        await moveCageBox(this.moveForm)
+        this.$message.success('移笼/分笼操作成功')
+        this.moveDialogVisible = false
+        this.getAnimalList() // 刷新列表
+        this.$refs.table.clearSelection()
+      } catch (error) {
+        console.error('移笼/分笼操作失败:', error)
+        this.$message.error(error.message || '移笼/分笼操作失败')
+      } finally {
+        this.moveLoading = false
       }
     },
   }
