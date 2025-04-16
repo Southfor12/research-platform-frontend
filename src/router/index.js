@@ -30,6 +30,7 @@ import scientific_examine from './modules/scientific'
 import personal_college from './modules/colleges'
 import feed from './modules/feed'
 import personal_product from './modules/product'
+import order from './modules/order'
 
 //index
 import index from './modules/index'
@@ -55,6 +56,7 @@ import personal_examine from './personal/examine'
 import personal_shopping from './personal/shopping'
 
 import store from '../store'
+import RackDisplay from '@/components/RackDisplay.vue'
 
 
 //静态路由，这些路由是所有用户都能访问的， 主要用于基础功能，不受权限管理影响
@@ -105,6 +107,19 @@ export const constantRoutes = [
   h5,
   //feed
   //style_demo
+  {
+    path: '/rack-display',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        name: 'RackDisplay',
+        component: RackDisplay,
+        meta: { title: '笼位展示', icon: 'tree' }
+      }
+    ]
+  },
 ]
 
 //动态路由，主要用于后台管理，这部分路由是基于权限动态加载的
@@ -147,6 +162,7 @@ export const asyncRoutes = [{
   personal_college, //学校管理
   personal_product, //产品管理
   feed,
+  order,
 
 // 404 page must be placed at the end !!!
 {

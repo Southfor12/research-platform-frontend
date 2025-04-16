@@ -318,3 +318,21 @@ export function addCageOrder2(data) {
     data: data
   });
 }
+
+//根据课题组负责人id查询订单
+export function getOrderListByOrgId(params) {
+  return request({
+    url: '/animal/ord/animal/getByGroupUser',
+    method: 'get',
+    params
+  });
+}
+
+//根据课题组负责人id查询饲养订单
+export function getFeedOrderListByOrgId(params) {
+  return request({
+    url: '/animal/ord/care/getByGroupUser',
+    method: 'get',
+    params
+  });
+} 

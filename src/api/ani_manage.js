@@ -412,3 +412,12 @@ export function cancelRackAuthorization(params) {
         params
     })  
 }
+
+//查询所有饲养服务
+export function getFeedService(params) {
+    return request({
+        url: '/animal/pro/care/page',
+        method: 'get',
+        params
+    })
+}
