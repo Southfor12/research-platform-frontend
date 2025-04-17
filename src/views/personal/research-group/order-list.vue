@@ -15,7 +15,7 @@
 
             <el-table :data="animalOrder" stripe border>
               <!-- 表格列定义 -->
-              <el-table-column prop="animalOrder" label="订单编号" width="100">
+              <el-table-column prop="id" label="订单编号" width="100">
                 <template #default="scope">
                   <el-tooltip content="查看详情" placement="top">
                     <el-icon
@@ -32,9 +32,7 @@
               <el-table-column prop="user_name" label="订单客户姓名" width="120" />
               <el-table-column prop="user_organization_name" label="课程组" width="100" />
               <el-table-column prop="create_time" label="订单时间" width="150" />
-              <el-table-column prop="name" label="产品服务" />
-              <el-table-column prop="supplier_name" label="供应商" />
-              <el-table-column prop="level" label="动物级别" />
+              <el-table-column prop="project_name" label="产品服务" />
               <el-table-column prop="age" label="周龄" />
               <el-table-column prop="weight" label="体重" />
               <el-table-column prop="gender" label="性别" />
@@ -43,14 +41,20 @@
               <el-table-column prop="totalCost" label="金额" />
               <el-table-column prop="extra" label="其他费用" />
               <el-table-column prop="finalCost" label="总额" />
-              <!-- <el-table-column prop="room" label="词养房间" /> -->
               <el-table-column prop="description" label="备注" />
-              <el-table-column prop="status_" label="当前状态标识" />
+              <el-table-column prop="status_" label="当前状态标识">
+                <template slot-scope="scope">
+                  <span :style="{ color: scope.row.status < 0 ? 'red' : 'inherit' }">
+                    {{ scope.row.status_ }}
+                  </span>
+                </template>
+              </el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
-                  <el-tag v-if="scope.row.auditStatus" type="success">已审核</el-tag>
+                  <el-tag v-if="scope.row.status === 2" type="success">已审核</el-tag>
+                  <el-tag v-else-if="scope.row.status === -2" type="danger">审核不通过</el-tag>
                   <el-button
-                    v-else
+                    v-else-if="scope.row.status === 1"
                     type="primary"
                     size="mini"
                     @click="handleAnimalAudit(scope.row)"
@@ -72,7 +76,7 @@
               <el-card shadow="hover" class="info-card">
                 <el-form :column="2" border>
                   <el-form-item label="订单编号">{{ selectedOrder.id }}</el-form-item>
-                  <el-form-item label="产品服务">{{ selectedOrder.name }}</el-form-item>
+                  <el-form-item label="产品服务">{{ selectedOrder.project_name }}</el-form-item>
                   <el-form-item label="价格">{{ selectedOrder.price }}</el-form-item>
                   <el-form-item label="数量">{{ selectedOrder.count }}</el-form-item>
                   <el-form-item label="金额合计">{{
@@ -190,11 +194,23 @@
               <el-table-column prop="extra" label="其他费用" />
               <el-table-column prop="finalCost" label="总额" />
               <el-table-column prop="description" label="备注" />
-              <el-table-column prop="status_" label="当前状态标识" />
+              <el-table-column prop="status_" label="当前状态标识">
+                <template slot-scope="scope">
+                  <span :style="{ color: scope.row.status < 0 ? 'red' : 'inherit' }">
+                    {{ scope.row.status_ }}
+                  </span>
+                </template>
+              </el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
-                  <el-tag v-if="scope.row.auditStatus" type="success">已审核</el-tag>
-                  <el-button v-else type="primary" size="mini" @click="handleItemAudit(scope.row)">
+                  <el-tag v-if="scope.row.status === 2" type="success">已审核</el-tag>
+                  <el-tag v-else-if="scope.row.status === -2" type="danger">审核不通过</el-tag>
+                  <el-button
+                    v-else-if="scope.row.status === 1"
+                    type="primary"
+                    size="mini"
+                    @click="handleItemAudit(scope.row)"
+                  >
                     审核
                   </el-button>
                 </template>
@@ -309,11 +325,23 @@
               <el-table-column prop="start_time" label="开始时间" />
               <el-table-column prop="end_time" label="结束时间" />
               <el-table-column prop="description" label="备注" />
-              <el-table-column prop="status_" label="当前状态标识" />
+              <el-table-column prop="status_" label="当前状态标识">
+                <template slot-scope="scope">
+                  <span :style="{ color: scope.row.status < 0 ? 'red' : 'inherit' }">
+                    {{ scope.row.status_ }}
+                  </span>
+                </template>
+              </el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
-                  <el-tag v-if="scope.row.auditStatus" type="success">已审核</el-tag>
-                  <el-button v-else type="primary" size="mini" @click="handleFeedAudit(scope.row)">
+                  <el-tag v-if="scope.row.status === 2" type="success">已审核</el-tag>
+                  <el-tag v-else-if="scope.row.status === -2" type="danger">审核不通过</el-tag>
+                  <el-button
+                    v-else-if="scope.row.status === 1"
+                    type="primary"
+                    size="mini"
+                    @click="handleFeedAudit(scope.row)"
+                  >
                     审核
                   </el-button>
                 </template>
@@ -452,11 +480,23 @@
               <el-table-column prop="count" label="数量" />
               <el-table-column prop="totalCost" label="金额" />
               <el-table-column prop="info" label="备注" />
-              <el-table-column prop="status_" label="当前状态标识" />
+              <el-table-column prop="status_" label="当前状态标识">
+                <template slot-scope="scope">
+                  <span :style="{ color: scope.row.status < 0 ? 'red' : 'inherit' }">
+                    {{ scope.row.status_ }}
+                  </span>
+                </template>
+              </el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
-                  <el-tag v-if="scope.row.auditStatus" type="success">已审核</el-tag>
-                  <el-button v-else type="primary" size="mini" @click="handleTechAudit(scope.row)">
+                  <el-tag v-if="scope.row.status === 2" type="success">已审核</el-tag>
+                  <el-tag v-else-if="scope.row.status === -2" type="danger">审核不通过</el-tag>
+                  <el-button
+                    v-else-if="scope.row.status === 1"
+                    type="primary"
+                    size="mini"
+                    @click="handleTechAudit(scope.row)"
+                  >
                     审核
                   </el-button>
                 </template>
@@ -563,6 +603,8 @@ import {
   submitAnimalAudit,
   submitItemAudit,
   submitFeedAudit,
+  getOrderListByOrgId,
+  getFeedOrderListByOrgId,
 } from '@/api/order';
 import { get_a_Feed, get_a_Animal } from '@/api/product';
 import { get_a_Rack } from '@/api/colleges';
@@ -671,64 +713,57 @@ export default {
       if (newTab === 'techOrder') this.getTechOrder();
     },
 
-    getAnimalOrder() {
-      getAllAnimalOrder().then((res) => {
-        const promises = res.data.map((item) => {
-          // 获取动物信息
-          const animalPromise = get_a_Animal({ id: item.animal_id })
-            .then((ress) => ({
-              name: ress.data.name,
-              level: ress.data.level,
-              age: ress.data.age,
-              weight: ress.data.weight,
-              gender: ress.data.gender,
-              price: ress.data.price,
-            }))
-            .catch((err) => {
-              console.error('Error in get_a_Animal:', err);
-              return {}; // 返回一个默认对象以避免 Promise.all 的失败
-            });
+    async getAnimalOrder() {
+      try {
+        // 新的实现
+        const res = await getOrderListByOrgId({ user_id: store.getters.member.id });
+        console.log('API Response:', res); // 添加日志查看返回数据
+        if (res.status === 1) {
+          this.animalOrder = res.data.map(item => {
+            // 处理状态标识
+            let statusText = '';
+            if (item.status < 0) {
+              // 审核不通过
+              statusText = '课题组管理员审核不通过';
+            } else {
+              // 审核通过，使用正常状态
+              statusText = this.animalStutas[item.status];
+            }
 
-          const feedOrderPromise = get_a_FeedOrder({ id: item.care_order_id })
-            .then((ress) => ({
-              cage_number: ress.data.cage_number,
-              rack_id: ress.data.rack_id,
-            }))
-            .catch((err) => {
-              console.error('Error in get_a_FeedOrder:', err);
-              return {}; // 返回一个默认对象以避免 Promise.all 的失败
-            });
-          // 合并两个 Promise 结果
-          return Promise.all([animalPromise, feedOrderPromise]).then(
-            ([animalData, feedOrderData]) => ({
+            return {
               ...item,
-              ...animalData,
-              ...feedOrderData,
-            })
-          );
-        });
-
-        // 等待所有 Promise 完成
-        Promise.all(promises).then((data) => {
-          this.animalOrder = data; // 确保所有数据加载完成后再赋值
-          if (store.getters.member.role_id === 13) {
-            this.animalOrder = this.animalOrder.filter((item) => item.status === 1);
-          } else if (store.getters.member.role_id === 14) {
-            this.animalOrder = this.animalOrder.filter((item) => item.status === 2);
-          } else if (store.getters.member.role_id === 12) {
-            this.animalOrder = this.animalOrder.filter((item) => item.status === 3);
-          } else this.animalOrder = [];
-          this.animalOrder.forEach((item) => {
-            console.log(item.status_);
-            item.totalCost = item.price * item.count;
-            item.finalCost = item.totalCost + item.extra;
-            item.status_ = this.animalStutas[item.status];
+              name: item.project_name, // 将 project_name 映射为 name
+              totalCost: item.price * item.count,
+              finalCost: (item.price * item.count) + item.extra,
+              status_: statusText,
+              // 添加审核状态判断
+              auditStatus: item.status !== 1
+            };
           });
-        });
-      });
+
+          // 暂时注释掉角色过滤代码
+          /*
+          if (store.getters.member.role_id === 13) {
+            this.animalOrder = this.animalOrder.filter(item => item.status === 1);
+          } else if (store.getters.member.role_id === 14) {
+            this.animalOrder = this.animalOrder.filter(item => item.status === 2);
+          } else if (store.getters.member.role_id === 12) {
+            this.animalOrder = this.animalOrder.filter(item => item.status === 3);
+          } else {
+            this.animalOrder = [];
+          }
+          */
+          
+          console.log('Processed animalOrder:', this.animalOrder); // 添加日志查看处理后的数据
+        }
+      } catch (error) {
+        console.error('Error in getAnimalOrder:', error);
+        this.$message.error('获取订单数据失败');
+      }
     },
 
     getFeedOrder() {
+      /*
       getAllFeedOrder().then((res) => {
         const promises = res.data.map((item) =>
           get_a_Feed({ id: item.care_id }).then((ress) => {
@@ -755,6 +790,41 @@ export default {
           });
         });
       });
+      */
+      
+      // 新的实现
+      getFeedOrderListByOrgId({ user_id: store.getters.member.id })
+        .then(res => {
+          console.log('Feed API Response:', res); // 添加日志查看返回数据
+          if (res.status === 1) {
+            this.feedOrder = res.data.map(item => {
+              // 处理状态标识
+              let statusText = '';
+              if (item.status < 0) {
+                // 审核不通过
+                statusText = '课题组管理员审核不通过';
+              } else {
+                // 审核通过，使用正常状态
+                statusText = this.feedStutas[item.status];
+              }
+
+              return {
+                ...item,
+                totalCost: item.price * item.count,
+                finalCost: (item.price * item.count) + (item.extra || 0),
+                status_: statusText,
+                // 添加审核状态判断
+                auditStatus: item.status !== 1
+              };
+            });
+            
+            console.log('Processed feedOrder:', this.feedOrder); // 添加日志查看处理后的数据
+          }
+        })
+        .catch(error => {
+          console.error('Error in getFeedOrder:', error);
+          this.$message.error('获取饲养订单数据失败');
+        });
     },
 
     getItemOrder() {
@@ -1035,19 +1105,34 @@ export default {
       });
     },
     handleAnimalAuditSubmit() {
-      if (store.getters.member.role_id === 12)
-        this.AnimalAuditForm.status = 5 * this.AnimalAuditForm.choice;
-      else if (store.getters.member.role_id === 13)
-        this.AnimalAuditForm.status = 2 * this.AnimalAuditForm.choice;
-      else if (store.getters.member.role_id === 14)
-        this.AnimalAuditForm.status = 3 * this.AnimalAuditForm.choice;
-      else if (store.getters.member.role_id === 15)
-        this.AnimalAuditForm.status = 3 * this.AnimalAuditForm.choice;
+      // 获取当前订单的状态
+      const currentOrder = this.animalOrder.find(item => item.id === this.AnimalAuditForm.id);
+      if (!currentOrder) {
+        this.$message.error('未找到当前订单');
+        return;
+      }
 
-      // console.log(this.AnimalAuditForm);
+      // 根据审核结果更新状态
+      if (this.AnimalAuditForm.choice === '1') {
+        // 审核通过，状态值+1
+        this.AnimalAuditForm.status = currentOrder.status + 1;
+      } else if (this.AnimalAuditForm.choice === '-1') {
+        // 审核不通过，状态值+1取反
+        this.AnimalAuditForm.status = -(currentOrder.status + 1);
+      }
+
+      // 提交审核
       checkAnimalOrder(this.AnimalAuditForm).then((res) => {
-        this.AuditAnimalDialogVisible = false;
-        this.getAnimalOrder();
+        if (res.status === 1) {
+          this.$message.success('审核提交成功');
+          this.AuditAnimalDialogVisible = false;
+          this.getAnimalOrder(); // 重新获取订单列表
+        } else {
+          this.$message.error(res.msg || '审核提交失败');
+        }
+      }).catch(error => {
+        console.error('审核提交错误:', error);
+        this.$message.error('审核提交失败');
       });
     },
     handleItemAuditSubmit() {
@@ -1066,14 +1151,34 @@ export default {
       });
     },
     handleFeedAuditSubmit() {
-      if (store.getters.member.role_id === 12)
-        this.FeedAuditForm.status = 4 * this.FeedAuditForm.choice;
-      else if (store.getters.member.role_id === 13)
-        this.FeedAuditForm.status = 2 * this.FeedAuditForm.choice;
+      // 获取当前订单的状态
+      const currentOrder = this.feedOrder.find(item => item.id === this.FeedAuditForm.id);
+      if (!currentOrder) {
+        this.$message.error('未找到当前订单');
+        return;
+      }
 
+      // 根据审核结果更新状态
+      if (this.FeedAuditForm.choice === '1') {
+        // 审核通过，状态值+1
+        this.FeedAuditForm.status = currentOrder.status + 1;
+      } else if (this.FeedAuditForm.choice === '-1') {
+        // 审核不通过，状态值+1取反
+        this.FeedAuditForm.status = -(currentOrder.status + 1);
+      }
+
+      // 提交审核
       checkFeedOrder(this.FeedAuditForm).then((res) => {
-        this.AuditFeedDialogVisible = false;
-        this.getFeedOrder();
+        if (res.status === 1) {
+          this.$message.success('审核提交成功');
+          this.AuditFeedDialogVisible = false;
+          this.getFeedOrder(); // 重新获取订单列表
+        } else {
+          this.$message.error(res.msg || '审核提交失败');
+        }
+      }).catch(error => {
+        console.error('审核提交错误:', error);
+        this.$message.error('审核提交失败');
       });
     },
   },
@@ -1118,5 +1223,11 @@ export default {
 .highlight {
   background-color: #ffd04b; /* 黄色 */
   color: #ffffff; /* 白色文字 */
+}
+
+/* 审核不通过状态样式 */
+.status-danger {
+  color: #f56c6c;
+  font-weight: bold;
 }
 </style>

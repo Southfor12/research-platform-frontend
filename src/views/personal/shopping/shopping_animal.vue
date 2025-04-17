@@ -79,6 +79,107 @@
         label-width="150px"
         style="margin-top: 40px"
       >
+        <!-- 动物来源 -->
+        <el-row gutter="20">
+          <el-col :span="12">
+            <el-form-item label="动物来源" prop="source">
+              <el-select v-model="submitform.source" size="big" class="width-200">
+                <el-option label="从中心购买" value="从中心购买"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 所属课题组 -->
+        <el-row gutter="20">
+          <el-col :span="12">
+            <el-form-item label="课题组" prop="research_group_name">
+              <el-select v-model="submitform.research_group_name" size="big" class="width-200">
+                <el-option 
+                  v-for="item in researchGroupList" 
+                  :key="item" 
+                  :label="item" 
+                  :value="item">
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 动物明细 -->
+        <el-row gutter="20">
+          <el-col :span="24">
+            <div style="font-weight: bolder">动物明细</div>
+            <hr />
+            <el-table :data="submitform.animals" border style="width: 100%">
+              <!-- 动物类型 -->
+              <el-table-column label="动物类型" width="180">
+                <template #default="scope">
+                  <el-select v-model="scope.row.animalType" placeholder="选择类型" clearable>
+                    <el-option v-for="type in uniqueAnimalTypes" :key="type.id" :label="type.name" :value="type.name" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <!-- 品系 -->
+              <el-table-column label="品系" width="180">
+                <template #default="scope">
+                  <el-select v-model="scope.row.breed" placeholder="选择品系" clearable>
+                    <el-option v-for="strain in filteredStrains(scope.row.animalType)" :key="strain.id"
+                      :label="strain.strain_name" :value="strain.strain_name" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <!-- 体重 -->
+              <el-table-column label="体重">
+                <template #default="scope">
+                  <el-input v-model="scope.row.weight" placeholder="体重"></el-input>
+                </template>
+              </el-table-column>
+              <!-- 周龄 -->
+              <el-table-column label="周龄">
+                <template #default="scope">
+                  <el-input v-model="scope.row.age" placeholder="周龄"></el-input>
+                </template>
+              </el-table-column>
+              <!-- 性别 -->
+              <el-table-column label="性别">
+                <template #default="scope">
+                  <el-select v-model="scope.row.gender" placeholder="性别">
+                    <el-option label="雄性" value="雄性"></el-option>
+                    <el-option label="雌性" value="雌性"></el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <!-- 数量 -->
+              <el-table-column label="数量">
+                <template #default="scope">
+                  <el-input v-model="scope.row.count" placeholder="数量"></el-input>
+                </template>
+              </el-table-column>
+              <!-- 供应商 -->
+              <el-table-column label="供应商">
+                <template #default="scope">
+                  <el-select v-model="scope.row.supplier" placeholder="供应商">
+                    <el-option v-for="supplier in suppliers" :key="supplier" :label="supplier" :value="supplier"></el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <!-- 操作 -->
+              <el-table-column label="操作" width="150">
+                <template #default="scope">
+                  <el-button type="danger" size="small" @click="deleteRow(scope.$index)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <!-- 添加按钮 -->
+            <el-row style="margin-top: 20px">
+              <el-col :span="24">
+                <el-button type="primary" @click="addRow">添加一行</el-button>
+              </el-col>
+            </el-row>
+          </el-col>
+        </el-row>
+
         <el-row gutter="20">
           <!-- 院区 -->
           <el-col :span="12">
@@ -136,6 +237,12 @@
               </el-select>
             </el-form-item>
           </el-col>
+
+          <el-col :span="12">
+            <el-form-item label="已选笼子数量" prop="count">
+              <el-input v-model="submitform.count" size="medium" class="width-200" />
+            </el-form-item>
+          </el-col>
         </el-row>
 
         <el-row gutter="20">
@@ -149,17 +256,36 @@
             </el-form-item>
           </el-col>
 
-          <!-- 数量 -->
+          <!-- 总价 -->
           <el-col :span="12">
-            <el-form-item label="数量" prop="count">
-              <el-input v-model="submitform.count" size="medium" class="width-200" />
+            <el-form-item label="预计需要笼子数" prop="price">
+              <el-input size="medium" class="width-200" :readonly="true" :value="totalCageNums + '个'">
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row gutter="20">
+          <!-- 笼盒类型 -->
+          <el-col :span="12">
+            <el-form-item label="笼盒类型" prop="cage_box_type">
+              <el-select v-model="submitform.cage_box_type" size="medium" class="width-200" @change="handleCageBoxTypeChange">
+                <el-option v-for="item in cageBoxList" :key="item.id" :label="item.box_type" :value="item.box_type"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <!-- 笼盒价格 -->
+          <el-col :span="12">
+            <el-form-item label="笼盒价格/个" prop="cage_box_price">
+              <el-input size="medium" class="width-200" :readonly="true" :value="submitform.cage_box_price + '元'">
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row>
           <!-- 表格 -->
-          <el-col v-if="submitform.type === 'true'">
+          <el-col>
             <el-form-item label="选择笼架" prop="rack_id">
               <el-select
                 v-model="submitform.rack_id"
@@ -194,22 +320,6 @@
         </el-row>
 
         <el-row gutter="20">
-          <!-- 饲养服务 -->
-          <el-col :span="12">
-  <el-form-item label="饲养服务" prop="service" style="margin-top: 40px">
-    <el-select v-model="submitform.service" size="medium" class="width-200">
-      <el-option 
-        v-for="item in serviceOptions" 
-        :key="item.id" 
-        :label="item.animal_type" 
-        :value="item.animal_type">
-      </el-option>
-    </el-select>
-  </el-form-item>
-</el-col>
-
-        </el-row>
-        <el-row gutter="20">
           <el-col :span="12">
             <el-form-item label="实验内容" prop="description">
               <el-input
@@ -230,7 +340,8 @@
                 v-model="submitform.start_time"
                 type="date"
                 placeholder="选择开始日期"
-                style="width: 30%"
+                style="width: 100%"
+                @change="watchDateChange"
               ></el-date-picker>
             </el-form-item>
           </el-col>
@@ -242,8 +353,45 @@
                 v-model="submitform.end_time"
                 type="date"
                 placeholder="选择结束日期"
-                style="width: 30%"
+                style="width: 100%"
+                @change="watchDateChange"
               ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 饲养服务选择 -->
+        <el-row gutter="20">
+          <el-col :span="12">
+            <el-form-item label="饲养服务" prop="care_id">
+              <el-select 
+                v-model="submitform.care_id" 
+                size="big" 
+                class="width-200"
+                @change="handleCareServiceChange"
+                filterable
+                placeholder="请选择饲养服务">
+                <el-option
+                  v-for="item in filteredFeedServices"
+                  :key="item.id"
+                  :label="`${item.animal_type} - ${item.room_name} - ${item.manager}`"
+                  :value="item.id">
+                  <span>{{ item.animal_type }} - {{ item.room_name }}</span>
+                  <span style="float: right; color: #8492a6; font-size: 13px">
+                    {{ item.price }}元/天
+                  </span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 总价格展示 -->
+        <el-row gutter="20">
+          <el-col :span="12">
+            <el-form-item label="总价格" prop="total_price">
+              <el-input size="medium" class="width-200" :readonly="true" :value="calculateTotalPrice().toFixed(2) + '元'">
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -264,13 +412,22 @@ import { get_a_Animal } from '@/api/product';
 import store from '@/store';
 import Empty from '@/components/Empty';
 import {getServiceType} from '@/api/order';
+import { getAnimalStrain, getAnimalType } from '@/api/ani_setting';
+import { getCageBoxList } from '@/api/cage_box';
+import { getResearchGroupName } from '@/api/ani_manage';
+import { getFeedService, getReservedCage2 } from '@/api/ani_manage';
+
 export default {
   components: {
     Empty,
   },
   data() {
     return {
-      selectedItem: null, // 存储选中的项目
+      animalTypeMap: new Map(), // 用于存储动物类型name和id的映射
+      defaultAnimalType: '', // 新增默认类型字段
+      unitPrice: 0,
+      animalStrains: [],
+      animalTypes: [],
       laboratoryList: [], // 实验室列表
       tenementList: [], // 楼栋列表
       campusList: [], // 院区列表
@@ -279,15 +436,20 @@ export default {
       AlltenementList: [], // 所有楼栋列表
       AllcampusList: [], // 所有院区列表
       AllcageList: [], // 所有笼架列表
-
-      activecage: [], // 存储多选单元格的信息
+      suppliers: ['上海新菲公司', '北京供应商', '广州供应商'], // 供应商示例数据
+      cageBoxList: [], // 新增笼盒列表
+      feedPrice: 0, // 新增饲养价格
+      researchGroupList: [], // 课题组列表
+      reservedCageNumbers: [], // 新增：存储自持笼位编号
 
       rows: 10, // 行数
       columns: ['A', 'B', 'C', 'D', 'E'], // 列名
+
       tableData: [], // 表格数据
-      activeCells: [], // 选择的
-      activeCells_: [], // 已选择的
-      serviceOptions: [], // 存储后端返回的饲养服务列表
+      activeCells: [], // 存储多选单元格的信息
+      activecage: [],  // 存储多选单元格的信息  被选中的笼子的位置号
+      lockedCageNumbers: [], // 存储锁定笼位的编号
+
       is_laboratory: 'true', // 是否饲养
       project_list: [
         {
@@ -297,29 +459,30 @@ export default {
         },
       ], // 项目列表
       submitform: {
-        service: '' ,// 选中的值
-        animals: [
-          {
-            age: '',
-            count: '',
-            gender: '',
-            name: '',
-            supplier: '',
-            weight: '',
-          },
-        ],
-        care_id: '',
-        animal_order_id: '',
-        cage_number: [],
-        count: '',
-        description: '',
-        end_time: '',
-        source: '0',
-        level: '',
-        project_name: '',
-        rack_id: '',
-        start_time: '',
+        level: '', // SPF等级
+        project_name: '', // 项目名称
+        source: '从中心购买', // 改为 "从中心购买"
         user_id: store.getters.member.id,
+        care_id: '',
+        rack_id: '',
+        count: 0,
+        description: '',
+        cage_box_type: '',
+        cage_box_price: 0,
+        research_group_name: '',
+        cage_number: [],
+        start_time: '',
+        end_time: '',
+        animals: [{
+          name: '',
+          animalType: '', // 注意：示例中是 animal_type
+          breed: '', // 示例中没有这个字段
+          weight: '',
+          age: '',
+          gender: '',
+          count: '',
+          supplier: ''
+        }]
       },
       queryForm: {
         id: '',
@@ -337,6 +500,12 @@ export default {
       },
 
       list: [],
+      feedServiceList: [], // 存储饲养服务列表
+      rules: {
+        care_id: [
+          { required: true, message: '请选择饲养服务', trigger: 'change' }
+        ]
+      }
     };
   },
 
@@ -348,9 +517,58 @@ export default {
       });
       return total.toFixed(2);
     },
+    // 新增去重后的动物类型
+    uniqueAnimalTypes() {
+      const seen = new Set()
+      return this.animalTypes.filter(item => {
+        const duplicate = seen.has(item.name)
+        seen.add(item.name)
+        return !duplicate
+      })
+    },
+    // 新增动态获取品系列表的方法
+    filteredStrains() {
+      return (animalType) => {
+        const typeInfo = this.animalTypeMap.get(animalType);
+        const typeId = typeInfo && typeInfo.id;
+        if (!typeId) return [];
+        return this.animalStrains.filter(
+          strain => strain.animal_type_id === typeId
+        );
+      };
+    },
+    totalCageNums() {
+      let total = 0
+      this.submitform.animals.forEach(animal => {
+        const typeInfo = this.animalTypeMap.get(animal.animalType)
+        const capacity = (typeInfo && typeInfo.capacity) || 1;
+        const count = Number(animal.count) || 0
+        if (capacity > 0) {
+          total += Math.ceil(count / capacity)
+        }
+      })
+      return total
+    },
+    filteredFeedServices() {
+      // 如果没有选择动物，显示所有服务
+      if (!this.submitform.animals[0].animalType) {
+        return this.feedServiceList;
+      }
+      // 根据选中的动物类型过滤服务
+      return this.feedServiceList.filter(
+        service => service.animal_type === this.submitform.animals[0].animalType
+      );
+    }
   },
   created() {
     this.init();
+    this.loadAnimalTypes();
+    this.loadAnimalStrains();
+    this.getResearchGroupList();
+    this.getCageBoxList();
+    this.getFeedPrice();
+    this.getFeedServiceList();
+    
     get_a_AnimalOrder({ id: this.$route.params.id })
       .then((res) => {
         res.data = [{ ...res.data }];
@@ -365,7 +583,7 @@ export default {
         );
 
         Promise.all(promises).then((data) => {
-          this.list = data; // 确保所有数据加载完成后再赋值
+          this.list = data;
           this.submitform.animals[0].age = this.list[0].age;
           this.submitform.animals[0].count = this.list[0].count;
           this.submitform.animals[0].gender = this.list[0].gender;
@@ -377,6 +595,158 @@ export default {
       .catch(() => {});
   },
   methods: {
+    // 新增动物品系加载方法
+    async loadAnimalStrains() {
+      try {
+        const res = await getAnimalStrain({
+          pageNo: 1,
+          pageSize: 1000
+        })
+        if (res.status === 1) {
+          this.animalStrains = res.data.records
+        }
+      } catch (error) {
+        console.error('获取动物品系失败:', error)
+      }
+    },
+
+    async loadAnimalTypes() {
+      try {
+        const res = await getAnimalType()
+        if (res.status === 1) {
+          this.animalTypes = res.data;
+          res.data.forEach(item => {
+            this.animalTypeMap.set(item.name,
+              {
+                id: item.id,
+                capacity: item.default_capacity
+              })
+          })
+        }
+      } catch (error) {
+        console.error('获取动物类型失败:', error)
+      }
+    },
+
+    // 获取课题组列表
+    async getResearchGroupList() {
+      try {
+        const res = await getResearchGroupName({ user_id: store.getters.member.id })
+        if (res.status === 1) {
+          this.researchGroupList = res.data
+        }
+      } catch (error) {
+        console.error('获取课题组列表失败:', error)
+      }
+    },
+
+    // 获取笼盒列表
+    async getCageBoxList() {
+      try {
+        const res = await getCageBoxList();
+        if (res.status === 1) {
+          this.cageBoxList = res.data;
+        }
+      } catch (error) {
+        console.error('获取笼盒列表失败:', error);
+      }
+    },
+
+    // 处理笼盒类型变化
+    handleCageBoxTypeChange(value) {
+      const selectedBox = this.cageBoxList.find(item => item.box_type === value);
+      if (selectedBox) {
+        this.submitform.cage_box_type = selectedBox.box_type;
+        this.submitform.cage_box_price = selectedBox.cage_box_price;
+      }
+    },
+
+    // 计算总天数
+    calculateTotalDays() {
+      if (!this.submitform.start_time || !this.submitform.end_time) {
+        return 0;
+      }
+      const startDate = new Date(this.submitform.start_time);
+      const endDate = new Date(this.submitform.end_time);
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    },
+
+    // 计算总价格
+    calculateTotalPrice() {
+      // 笼盒总价 = 预计需要笼子数 * 笼盒价格
+      const cageBoxTotal = this.totalCageNums * this.submitform.cage_box_price;
+      
+      // 饲养总价 = 总天数 * 笼子数 * 饲养价格
+      const feedTotal = this.calculateTotalDays() * this.submitform.count * this.feedPrice;
+      
+      // 总价格 = 笼盒总价 + 饲养总价
+      return cageBoxTotal + feedTotal;
+    },
+
+    // 获取饲养价格
+    async getFeedPrice() {
+      try {
+        const id = this.$route.params.id;
+        if (!id) {
+          console.error('未找到路由参数id');
+          return;
+        }
+        const res = await get_a_Feed({ id });
+        if (res.status === 1) {
+          this.feedPrice = res.data.price;
+        }
+      } catch (error) {
+        console.error('获取饲养价格失败:', error);
+        this.feedPrice = 0;
+      }
+    },
+
+    // 监听日期变化
+    watchDateChange() {
+      this.$forceUpdate();
+    },
+
+    // 添加一行
+    addRow() {
+      this.submitform.animals.push({
+        animalType: this.defaultAnimalType,
+        breed: '',
+        weight: '',
+        age: '',
+        gender: '',
+        count: '',
+        supplier: '',
+      });
+    },
+
+    // 删除一行
+    deleteRow(index) {
+      this.submitform.animals.splice(index, 1);
+    },
+
+    handleSubmit() {
+      // 将品系的值赋给name字段
+      this.submitform.animals.forEach(animal => {
+        animal.name = animal.breed;
+      });
+      
+      // 设置动物订单ID
+      this.submitform.animal_order_id = this.$route.params.id;
+      
+      // 提交表单
+      editFeed(this.submitform).then((res) => {
+        editAnimalOrder({
+          id: this.$route.params.id,
+          care_order_id: res.data,
+          count: this.list[0].count,
+        }).then(() => {
+          this.$router.push('/personal/shopping/cart');
+        });
+      }).catch(() => {});
+    },
+
     selectOnly(row) {
       // 遍历所有数据行，确保只有当前行被选中
       this.tableData.forEach((item) => {
@@ -385,28 +755,6 @@ export default {
       this.selectedItem = row.selected ? row.pro_name : null; // 更新选中的项目名称
       this.submitform.project_name = this.selectedItem;
     },
-    handleSubmit() {
-      this.submitform.animals[0].count = this.list[0].count;
-      this.submitform.animals[0].name = this.submitform.animals[0].name.split(' ')[0];
-      console.log(this.submitform);
-      editFeed(this.submitform)//这一步给后端填充好剩余的字段
-        .then((res) => {
-          editAnimalOrder({
-            id: this.$route.params.id,
-            care_order_id: res.data,
-            count: this.list[0].count,
-
-          }).then(() => {
-            this.$router.push('/personal/shopping/cart');
-          });
-        })
-        .catch(() => {});
-    },
-
-    handleBack() {
-      this.$router.push('/buy-animal');
-    },
-    // 选择校区时更新楼宇列表
     handleCampusChange() {
       this.submitform.building_id = '';
       if (this.submitform.campus_name) {
@@ -420,7 +768,6 @@ export default {
       }
     },
 
-    // 选择楼宇时更新校区和实验室列表
     handleBuildingChange() {
       this.submitform.laboratory_id = '';
       // this.submitform.cage_id = '';
@@ -443,24 +790,9 @@ export default {
         this.laboratoryList = [];
       }
     },
-    // 选择实验室时更新笼架列表
     handleLaboratoryChange() {
       this.submitform.rack_id = '';
       if (this.submitform.laboratory_id) {
-        console.log(this.submitform.laboratory_id);
-        //根据选择的实验室获取饲养服务列表
-        getServiceType(this.submitform.laboratory_id).then((res) => {
-          console.log(res);
-          if (res.status === 1) {
-        this.serviceOptions = res.data; // 直接赋值给 options
-        } else {
-        this.serviceOptions = []; // 失败时清空
-        this.$message.error("获取饲养服务失败");
-      }
-
-        });
-
-
         // 根据选择的实验室更新笼架列表
         this.getRackList(this.submitform.laboratory_id);
         this.cageList = this.AllcageList.filter(
@@ -474,71 +806,224 @@ export default {
       this.submitform.campus_name = res.campus_name;
       this.submitform.building_id = res.building_name;
     },
-    // 选择笼架的时候更新笼子
     handleRackChange() {
+      // 清空之前的选择
+      this.activeCells = [];
+      this.submitform.cage_number = [];
+      this.submitform.count = 0;
+      
       this.rows = this.cageList.find((item) => item.id === this.submitform.rack_id).height;
       this.columns = [];
       const j = this.cageList.find((item) => item.id === this.submitform.rack_id).width;
       for (let i = 1; i <= j; i++) {
         this.columns.push(String.fromCharCode(64 + i));
       }
-      // console.log(this.rows, this.columns);
       this.generateTableData();
-
-      this.getCageUsed(this.submitform.rack_id).then(() => {
-        for (let i = 0; i < this.activecage.length; i++) {
-          const row = this.tableData[Math.floor(this.activecage[i] / this.rows)]; // 获取特定行的数据
-          const column = this.columns.find(
-            (col) =>
-              col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
-          ); // 获取特定列的名字
-          this.handleCellClick(row, { property: column });
-        }
-      });
+      
+      // 如果是自持笼位，获取用户的自持笼位
+      if (this.submitform.type === 'false') {
+        this.getReservedCageNumbers(this.submitform.rack_id).then(() => {
+          // 渲染自持笼位
+          for (let i = 0; i < this.reservedCageNumbers.length; i++) {
+            const cageNumber = this.reservedCageNumbers[i];
+            const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
+            const column = this.columns.find(
+              (col) =>
+                col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+            );
+            this.handleReservedCellClick(row, { property: column });
+          }
+        });
+      } else {
+        // 按顺序获取和渲染笼位状态
+        this.getCageUsed(this.submitform.rack_id).then(() => {
+          this.getReservedCageNumbers(this.submitform.rack_id).then(() => {
+            this.getLockedCageNumbers(this.submitform.rack_id).then(() => {
+              // 渲染已使用的笼位
+              for (let i = 0; i < this.activecage.length; i++) {
+                const row = this.tableData[Math.floor(this.activecage[i] / this.columns.length)];
+                const column = this.columns.find(
+                  (col) =>
+                    col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
+                );
+                this.handleUsedCellClick(row, { property: column });
+              }
+              
+              // 渲染自持笼位
+              for (let i = 0; i < this.reservedCageNumbers.length; i++) {
+                const cageNumber = this.reservedCageNumbers[i];
+                const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
+                const column = this.columns.find(
+                  (col) =>
+                    col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+                );
+                
+                if (!this.activecage.includes(cageNumber)) {
+                  this.handleReservedCellClick(row, { property: column });
+                }
+              }
+              
+              // 渲染锁定笼位
+              for (let i = 0; i < this.lockedCageNumbers.length; i++) {
+                const cageNumber = this.lockedCageNumbers[i];
+                const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
+                const column = this.columns.find(
+                  (col) =>
+                    col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+                );
+                
+                if (!this.activecage.includes(cageNumber) && !this.reservedCageNumbers.includes(cageNumber)) {
+                  this.handleLockedCellClick(row, { property: column });
+                }
+              }
+            });
+          });
+        });
+      }
     },
 
-    // 处理单元格点击事件
     handleCellClick(row, column) {
       let cellKey = { row: row.row, column: column.property };
       if (!row.row) {
         cellKey = { row: row, column: column };
       }
+      
+      // 计算当前单元格的编号
+      const cageNumber = (row.row - 1) * this.columns.length + column.property.charCodeAt(0) - 'A'.charCodeAt(0);
+      
+      // 检查是否是已使用的笼位（黄色高亮）
+      const isUsed = this.activecage && this.activecage.includes(cageNumber);
+      
+      // 检查是否是自持笼位（蓝色高亮）
+      const isReserved = this.reservedCageNumbers && this.reservedCageNumbers.includes(cageNumber);
+      
+      // 检查是否是锁定笼位（灰色高亮）
+      const isLocked = this.lockedCageNumbers && this.lockedCageNumbers.includes(cageNumber);
+      
+      // 如果是自持笼位模式，只能选择自持笼位
+      if (this.submitform.type === 'false' && !isReserved) {
+        return;
+      }
+      
+      // 如果单元格已经被渲染了颜色（已使用、自持或锁定），则不允许选择
+      if (isUsed || isLocked) {
+        return;
+      }
+      
+      // 检查单元格是否已被选中
       const cellIndex = this.activeCells.findIndex(
         (cell) => cell.row === cellKey.row && cell.column === cellKey.column
       );
-      const res =
-        (row.row - 1) * this.columns.length + column.property.charCodeAt(0) - 'A'.charCodeAt(0);
-      if (this.activecage.includes(res)) this.activeCells_.push(cellKey);
+      
       if (cellIndex === -1) {
-        // 如果单元格不在 activeCells 中，添加
+        // 如果单元格不在 activeCells 中，添加并设置为红色高亮
         this.activeCells.push(cellKey);
+        // 添加到已选笼子编号数组
+        this.submitform.cage_number.push(cageNumber);
+        // 增加已选笼子数量
+        this.submitform.count++;
       } else {
         // 如果单元格已被选中，移除
-        if (!this.activecage.includes(res)) this.activeCells.splice(cellIndex, 1);
+        this.activeCells.splice(cellIndex, 1);
+        // 从已选笼子编号数组中移除
+        const numberIndex = this.submitform.cage_number.indexOf(cageNumber);
+        if (numberIndex !== -1) {
+          this.submitform.cage_number.splice(numberIndex, 1);
+          // 减少已选笼子数量，但确保不会小于0
+          this.submitform.count = Math.max(0, this.submitform.count - 1);
+        }
       }
-      this.submitform.count = this.activeCells.length - this.activecage.length;
+    },
 
-      if (!this.activecage.includes(res)) {
-        this.submitform.cage_number.push(res);
+    handleUsedCellClick(row, column) {
+      let cellKey = { row: row.row, column: column.property };
+      if (!row.row) {
+        cellKey = { row: row, column: column };
       }
+      this.activeCells.push({ ...cellKey, type: 'used' });
     },
-    // 根据单元格位置动态设置类名
+
+    handleReservedCellClick(row, column) {
+      let cellKey = { row: row.row, column: column.property };
+      if (!row.row) {
+        cellKey = { row: row, column: column };
+      }
+      this.activeCells.push({ ...cellKey, type: 'reserved' });
+    },
+
+    handleLockedCellClick(row, column) {
+      let cellKey = { row: row.row, column: column.property };
+      if (!row.row) {
+        cellKey = { row: row, column: column };
+      }
+      this.activeCells.push({ ...cellKey, type: 'locked' });
+    },
+
     getCellClassName({ row, columnIndex, column }) {
+      // 确保columnIndex有效且this.columns数组不为空
+      if (columnIndex <= 0 || !this.columns || this.columns.length === 0) {
+        return 'default-cell';
+      }
+      
       const colKey = this.columns[columnIndex - 1]; // 列名，从索引获取
-      const isActive = this.activeCells.some(
+      if (!colKey) {
+        return 'default-cell';
+      }
+      
+      // 计算当前单元格的编号
+      const cageNumber = (row.row - 1) * this.columns.length + (colKey.charCodeAt(0) - 'A'.charCodeAt(0));
+      
+      // 检查是否是自持笼位
+      const isReserved = this.reservedCageNumbers && this.reservedCageNumbers.includes(cageNumber);
+      
+      // 检查是否是锁定笼位
+      const isLocked = this.lockedCageNumbers && this.lockedCageNumbers.includes(cageNumber);
+      
+      // 检查是否被选中（红色高亮）
+      const isSelected = this.activeCells.some(
         (cell) => cell.row === row.row && cell.column === colKey
       );
-      const isActive_ = this.activeCells_.some(
-        (cell) => cell.row === row.row && cell.column === colKey
-      );
-      if (isActive_) return 'highlight_';
-      return isActive ? 'highlight' : 'default-cell'; // 高亮或默认样式
+      
+      // 检查是否是已使用的笼位（黄色高亮）
+      const isUsed = this.activecage && this.activecage.includes(cageNumber);
+      
+      // 如果是自持笼位模式
+      if (this.submitform.type === 'false') {
+        if (isReserved) {
+          // 如果是自持笼位，根据是否被选中显示不同颜色
+          return isSelected ? 'highlight-red' : 'highlight-blue';
+        }
+        // 非自持笼位显示默认样式
+        return 'default-cell';
+      }
+      
+      // 如果是自持笼位，返回蓝色高亮样式
+      if (isReserved) {
+        return 'highlight-blue';
+      }
+      
+      // 如果是锁定笼位，返回灰色高亮样式
+      if (isLocked) {
+        return 'highlight-gray';
+      }
+      
+      // 如果是已使用的笼位，返回黄色高亮样式
+      if (isUsed) {
+        return 'highlight';
+      }
+      
+      // 如果被选中，返回红色高亮样式
+      if (isSelected) {
+        return 'highlight-red';
+      }
+      
+      // 否则返回默认样式
+      return 'default-cell';
     },
+
     generateTableData() {
       this.tableData = [];
       this.activeCells = [];
-      this.activeCells_ = [];
-      this.count = 0;
       for (let i = 1; i <= this.rows; i++) {
         let rowData = { row: i };
         this.columns.forEach((col) => {
@@ -548,7 +1033,6 @@ export default {
       }
     },
 
-    // 获取 Campus 列表
     getCampusList() {
       return new Promise((resolve, reject) => {
         getCourtyard({ page: 1, pageSize: 1000 })
@@ -578,7 +1062,6 @@ export default {
       }
     },
 
-    // 获取 Tenement 列表
     getTenementList() {
       return new Promise((resolve, reject) => {
         getTenement({ page: 1, pageSize: 1000 })
@@ -590,7 +1073,6 @@ export default {
       });
     },
 
-    // 获取 Laboratory 列表
     getLaboratoryList() {
       return new Promise((resolve, reject) => {
         getLaboratory({ page: 1, pageSize: 1000 })
@@ -604,7 +1086,6 @@ export default {
       });
     },
 
-    // 获取 Rack 列表
     async getRackList(id) {
       try {
         const res = await getRack({ roomId: id, page: 1, pageSize: 1000 });
@@ -614,7 +1095,6 @@ export default {
       }
     },
 
-    // 初始化数据
     async init() {
       try {
         await Promise.all([this.getCampusList(), this.getTenementList(), this.getLaboratoryList()]);
@@ -628,6 +1108,72 @@ export default {
         console.error(error);
       }
     },
+
+    // 获取自持笼位编号
+    getReservedCageNumbers(id) {
+      try {
+        return new Promise((resolve, reject) => {
+          getReservedCage2({ 
+            cage_rack_id: id,
+            user_id: store.getters.member.id 
+          })
+            .then((res) => {
+              this.reservedCageNumbers = res.data;
+              resolve();
+            })
+            .catch(() => {
+              reject();
+            });
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
+    // 获取锁定笼位编号
+    getLockedCageNumbers(id) {
+      try {
+        return new Promise((resolve, reject) => {
+          getLockedCageNumber({ cage_rack_id: id })
+            .then((res) => {
+              this.lockedCageNumbers = res.data;
+              resolve();
+            })
+            .catch(() => {
+              reject();
+            });
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
+    // 获取饲养服务列表
+    async getFeedServiceList() {
+      try {
+        const res = await getFeedService({
+          page_size: 100,
+          area_type: '区',
+          no_deleted: true,
+          page: 1
+        });
+        if (res.status === 1) {
+          this.feedServiceList = res.data.content;
+        }
+      } catch (error) {
+        console.error('获取饲养服务列表失败:', error);
+      }
+    },
+
+    handleCareServiceChange(value) {
+      const selectedService = this.feedServiceList.find(service => service.id === value);
+      if (selectedService) {
+        // 更新饲养价格
+        this.feedPrice = selectedService.price;
+        // 强制更新总价计算
+        this.$forceUpdate();
+      }
+    }
   },
 };
 </script>
@@ -635,20 +1181,43 @@ export default {
       <style>
 /* 默认单元格样式 */
 .default-cell {
-  background-color: #f9f9f9; /* 浅灰色 */
+  background-color: #f9f9f9 !important;
+  /* 浅灰色 */
 }
-.el-table tbody tr:hover > td {
+
+.el-table tbody tr:hover>td {
   background: #f9f9f9 !important;
 }
 
 /* 高亮单元格样式 */
 .highlight {
-  background-color: #ffd04b; /* 黄色 */
-  color: #ffffff; /* 白色文字 */
+  background-color: #ffd04b !important;
+  /* 黄色 */
+  color: #ffffff !important;
+  /* 白色文字 */
 }
 
-.highlight_ {
-  background-color: gray; /* 灰色 */
-  color: #ffffff; /* 白色文字 */
+/* 红色高亮 */
+.highlight-red {
+  background-color: red !important;
+  /* 设置背景为红色 */
+  color: white !important;
+  /* 可选，设置文本颜色为白色，保证红色背景下文字清晰可见 */
+}
+
+/* 蓝色高亮 */
+.highlight-blue {
+  background-color: #409EFF !important;
+  /* 设置背景为蓝色 */
+  color: white !important;
+  /* 设置文本颜色为白色，保证蓝色背景下文字清晰可见 */
+}
+
+/* 灰色高亮 */
+.highlight-gray {
+  background-color: #909399 !important;
+  /* 设置背景为灰色 */
+  color: white !important;
+  /* 设置文本颜色为白色，保证灰色背景下文字清晰可见 */
 }
 </style>

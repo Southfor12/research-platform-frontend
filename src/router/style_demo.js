@@ -8,7 +8,7 @@ const style_demo ={
           path: '',
           name: 'home',
           component: () => import('@/views/demo/demo_home.vue'),
-          meta: { title: '哈哈哈哈哈' }
+          meta: { title: '测试用的' }
         }
       ]
 }

@@ -30,7 +30,7 @@ const feed = {
             node: 'apparatus',
             activeClass: 'apparatus'
           }
-    },,
+    },
     {
         path: '/admin/feed/import_animal',
         name:'动物导入',
@@ -111,8 +111,17 @@ const feed = {
             activeClass: 'apparatus'
         }
     },
+    {
+        path: '/admin/feed/feed_statistics',
+        name: '饲养统计',
+        component: () => import('@/views/admin/feed/feed-statistics/index'),
+        meta: {
+            title: '饲养统计',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
     ]
 }
-
 
 export default feed
