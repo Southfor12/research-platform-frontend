@@ -30,7 +30,7 @@ const feed = {
             node: 'apparatus',
             activeClass: 'apparatus'
           }
-    },,
+    },
     {
         path: '/admin/feed/import_animal',
         name:'动物导入',
@@ -123,6 +123,5 @@ const feed = {
     },
     ]
 }
-
 
 export default feed

@@ -1,8 +1,8 @@
 <!-- 跨笼架移动弹窗组件 -->
 <template>
   <el-dialog
-    title="移动笼盒"
-    :visible.sync="visible"
+    :title="selectedAnimal ? '移动动物' : '移动笼盒'"
+    :visible.sync="dialogVisible"
     width="90%"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
@@ -148,7 +148,8 @@ import {
   getCageId,
   moveCage,
   getCageBoxId,
-  getOrderInfo
+  getOrderInfo,
+  moveAnimal
 } from '@/api/ani_manage';
 
 export default {
@@ -157,6 +158,10 @@ export default {
     visible: {
       type: Boolean,
       default: false
+    },
+    selectedAnimal: {
+      type: Object,
+      default: () => ({})
     },
     sourceCageBoxInfo: {
       type: Object,
@@ -210,14 +215,21 @@ export default {
         row: null,
         column: '',
         position: ''
-      }
+      },
+      dialogVisible: false
     };
   },
   watch: {
     visible(val) {
+      this.dialogVisible = val
       if (val) {
-        this.init();
-        this.parseSourcePosition();
+        this.init()
+        this.parseSourcePosition()
+      }
+    },
+    dialogVisible(val) {
+      if (!val) {
+        this.$emit('update:visible', false)
       }
     }
   },
@@ -572,29 +584,38 @@ export default {
 
     // 处理关闭
     handleClose() {
-      this.$emit('update:visible', false);
-      this.resetAllState();
+      this.dialogVisible = false
+      this.resetAllState()
     },
 
     // 确认移动
     async confirmMove() {
       if (!this.targetCage.id) {
-        this.$message.warning('请选择目标笼盒');
-        return;
+        this.$message.warning('请选择目标笼盒')
+        return
       }
 
       try {
-        await moveCage({
-          cage_box_id: this.sourceCageBoxInfo.id,
-          newcage_id: this.targetCage.id
-        });
+        if (this.selectedAnimal) {
+          // 移动动物
+          await moveAnimal({
+            animal_id: this.selectedAnimal.animalId,
+            new_cage_id: this.targetCage.id
+          })
+        } else {
+          // 移动笼盒
+          await moveCage({
+            cage_box_id: this.sourceCageBoxInfo.id,
+            newcage_id: this.targetCage.id
+          })
+        }
 
-        this.$message.success('移动笼盒成功');
-        this.$emit('move-success');
-        this.handleClose();
+        this.$message.success(this.selectedAnimal ? '移动动物成功' : '移动笼盒成功')
+        this.$emit('move-success')
+        this.handleClose()
       } catch (error) {
-        console.error('移动笼盒失败:', error);
-        this.$message.error('移动笼盒失败');
+        console.error('移动失败:', error)
+        this.$message.error('移动失败')
       }
     }
   }

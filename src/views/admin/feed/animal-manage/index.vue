@@ -168,7 +168,7 @@
           <div class="button-group">
             <el-button type="primary" icon="el-icon-delete" plain @click="handleExecute">处死</el-button>
             <el-button type="primary" icon="el-icon-edit" plain @click="handleEdit">编辑</el-button>
-            <el-button type="primary" icon="el-icon-share" plain>移笼/分笼</el-button>
+            <el-button type="primary" icon="el-icon-share" plain @click="handleMoveCage">移笼/分笼</el-button>
             <el-button type="primary" icon="el-icon-setting" plain>基础设置</el-button>
             <el-button type="primary" icon="el-icon-edit" plain @click="handleStatusChange">修改状态</el-button>
             <el-button type="primary" icon="el-icon-connection" plain @click="handleBreeding">配繁</el-button>
@@ -467,15 +467,29 @@
         </div>
       </el-collapse-item>
     </el-collapse>
+
+    <!-- 移笼/分笼对话框 -->
+    <MoveCageDialog
+      :visible.sync="moveCageDialogVisible"
+      :sourceCageBoxInfo="sourceCageBoxInfo"
+      :sourcePosition="sourcePosition"
+      :sourceRackLabel="sourceRackLabel"
+      :sourceCageId="sourceCageId"
+      @move-success="handleMoveSuccess">
+    </MoveCageDialog>
   </div>
 </template>
 
 <script>
 import { getAnimalType, getAnimalStrain, getAnimalDeathReason, getAnimalDiseaseType, getTreatmentPlan } from '@/api/ani_setting'
 import { getAnimalStatus, getAnimalManage, animalDeath, animalManageEdit, updateAnimalStatus2, submitMeasureData, diseaseTreatment } from '@/api/ani_manage'
+import MoveCageDialog from '../feed-rack/move-cage-dialog.vue'
 
 export default {
   name: 'AnimalManage',
+  components: {
+    MoveCageDialog
+  },
   data() {
     return {
       loading: false,
@@ -561,6 +575,13 @@ export default {
       },
       diseaseTypeOptions: [], // 疾病类型选项
       treatmentPlanOptions: [], // 治疗方案选项
+      // 移笼/分笼相关数据
+      moveCageDialogVisible: false,
+      selectedAnimalForMove: null,
+      sourceCageBoxInfo: null,
+      sourcePosition: '',
+      sourceRackLabel: '',
+      sourceCageId: null,
     }
   },
   created() {
@@ -1197,6 +1218,46 @@ export default {
       } finally {
         this.treatmentLoading = false
       }
+    },
+
+    // 处理移笼/分笼按钮点击
+    handleMoveCage() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择需要移动的动物')
+        return
+      }
+      if (this.selectedRows.length > 1) {
+        this.$message.warning('一次只能移动一个动物')
+        return
+      }
+
+      const selectedAnimal = this.selectedRows[0]
+      this.selectedAnimalForMove = selectedAnimal
+
+      // 获取源笼盒信息
+      this.sourceCageBoxInfo = {
+        id: selectedAnimal.cageId,
+        name: selectedAnimal.cageBoxName,
+        box_type: selectedAnimal.animalType,
+        animal_count: 1,
+        price: 0
+      }
+
+      // 设置源位置信息
+      this.sourcePosition = selectedAnimal.cageId
+      this.sourceRackLabel = selectedAnimal.cageBoxName
+      this.sourceCageId = selectedAnimal.cageId
+
+      // 显示移笼对话框
+      this.moveCageDialogVisible = true
+    },
+
+    // 处理移笼成功
+    handleMoveSuccess() {
+      this.$message.success('动物移动成功')
+      this.getAnimalList() // 刷新列表
+      this.$refs.table.clearSelection()
+      this.selectedAnimalForMove = null
     },
   }
 }

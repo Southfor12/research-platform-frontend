@@ -285,7 +285,7 @@
 
         <el-row>
           <!-- 表格 -->
-          <el-col v-if="submitform.type === 'true'">
+          <el-col>
             <el-form-item label="选择笼架" prop="rack_id">
               <el-select
                 v-model="submitform.rack_id"
@@ -415,7 +415,7 @@ import {getServiceType} from '@/api/order';
 import { getAnimalStrain, getAnimalType } from '@/api/ani_setting';
 import { getCageBoxList } from '@/api/cage_box';
 import { getResearchGroupName } from '@/api/ani_manage';
-import { getFeedService } from '@/api/ani_manage';
+import { getFeedService, getReservedCage2 } from '@/api/ani_manage';
 
 export default {
   components: {
@@ -440,6 +440,7 @@ export default {
       cageBoxList: [], // 新增笼盒列表
       feedPrice: 0, // 新增饲养价格
       researchGroupList: [], // 课题组列表
+      reservedCageNumbers: [], // 新增：存储自持笼位编号
 
       rows: 10, // 行数
       columns: ['A', 'B', 'C', 'D', 'E'], // 列名
@@ -447,7 +448,6 @@ export default {
       tableData: [], // 表格数据
       activeCells: [], // 存储多选单元格的信息
       activecage: [],  // 存储多选单元格的信息  被选中的笼子的位置号
-      reservedCageNumbers: [], // 存储自持笼位的编号
       lockedCageNumbers: [], // 存储锁定笼位的编号
 
       is_laboratory: 'true', // 是否饲养
@@ -820,50 +820,66 @@ export default {
       }
       this.generateTableData();
       
-      // 按顺序获取和渲染笼位状态
-      this.getCageUsed(this.submitform.rack_id).then(() => {
+      // 如果是自持笼位，获取用户的自持笼位
+      if (this.submitform.type === 'false') {
         this.getReservedCageNumbers(this.submitform.rack_id).then(() => {
-          this.getLockedCageNumbers(this.submitform.rack_id).then(() => {
-            // 渲染已使用的笼位
-            for (let i = 0; i < this.activecage.length; i++) {
-              const row = this.tableData[Math.floor(this.activecage[i] / this.columns.length)];
-              const column = this.columns.find(
-                (col) =>
-                  col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
-              );
-              this.handleUsedCellClick(row, { property: column });
-            }
-            
-            // 渲染自持笼位
-            for (let i = 0; i < this.reservedCageNumbers.length; i++) {
-              const cageNumber = this.reservedCageNumbers[i];
-              const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
-              const column = this.columns.find(
-                (col) =>
-                  col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
-              );
-              
-              if (!this.activecage.includes(cageNumber)) {
-                this.handleReservedCellClick(row, { property: column });
+          // 渲染自持笼位
+          for (let i = 0; i < this.reservedCageNumbers.length; i++) {
+            const cageNumber = this.reservedCageNumbers[i];
+            const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
+            const column = this.columns.find(
+              (col) =>
+                col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+            );
+            this.handleReservedCellClick(row, { property: column });
+          }
+        });
+      } else {
+        // 按顺序获取和渲染笼位状态
+        this.getCageUsed(this.submitform.rack_id).then(() => {
+          this.getReservedCageNumbers(this.submitform.rack_id).then(() => {
+            this.getLockedCageNumbers(this.submitform.rack_id).then(() => {
+              // 渲染已使用的笼位
+              for (let i = 0; i < this.activecage.length; i++) {
+                const row = this.tableData[Math.floor(this.activecage[i] / this.columns.length)];
+                const column = this.columns.find(
+                  (col) =>
+                    col === String.fromCharCode(64 + (this.activecage[i] % this.columns.length) + 1)
+                );
+                this.handleUsedCellClick(row, { property: column });
               }
-            }
-            
-            // 渲染锁定笼位
-            for (let i = 0; i < this.lockedCageNumbers.length; i++) {
-              const cageNumber = this.lockedCageNumbers[i];
-              const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
-              const column = this.columns.find(
-                (col) =>
-                  col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
-              );
               
-              if (!this.activecage.includes(cageNumber) && !this.reservedCageNumbers.includes(cageNumber)) {
-                this.handleLockedCellClick(row, { property: column });
+              // 渲染自持笼位
+              for (let i = 0; i < this.reservedCageNumbers.length; i++) {
+                const cageNumber = this.reservedCageNumbers[i];
+                const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
+                const column = this.columns.find(
+                  (col) =>
+                    col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+                );
+                
+                if (!this.activecage.includes(cageNumber)) {
+                  this.handleReservedCellClick(row, { property: column });
+                }
               }
-            }
+              
+              // 渲染锁定笼位
+              for (let i = 0; i < this.lockedCageNumbers.length; i++) {
+                const cageNumber = this.lockedCageNumbers[i];
+                const row = this.tableData[Math.floor(cageNumber / this.columns.length)];
+                const column = this.columns.find(
+                  (col) =>
+                    col === String.fromCharCode(64 + (cageNumber % this.columns.length) + 1)
+                );
+                
+                if (!this.activecage.includes(cageNumber) && !this.reservedCageNumbers.includes(cageNumber)) {
+                  this.handleLockedCellClick(row, { property: column });
+                }
+              }
+            });
           });
         });
-      });
+      }
     },
 
     handleCellClick(row, column) {
@@ -884,8 +900,13 @@ export default {
       // 检查是否是锁定笼位（灰色高亮）
       const isLocked = this.lockedCageNumbers && this.lockedCageNumbers.includes(cageNumber);
       
+      // 如果是自持笼位模式，只能选择自持笼位
+      if (this.submitform.type === 'false' && !isReserved) {
+        return;
+      }
+      
       // 如果单元格已经被渲染了颜色（已使用、自持或锁定），则不允许选择
-      if (isUsed || isReserved || isLocked) {
+      if (isUsed || isLocked) {
         return;
       }
       
@@ -908,9 +929,9 @@ export default {
         const numberIndex = this.submitform.cage_number.indexOf(cageNumber);
         if (numberIndex !== -1) {
           this.submitform.cage_number.splice(numberIndex, 1);
+          // 减少已选笼子数量，但确保不会小于0
+          this.submitform.count = Math.max(0, this.submitform.count - 1);
         }
-        // 减少已选笼子数量
-        this.submitform.count--;
       }
     },
 
@@ -965,6 +986,16 @@ export default {
       
       // 检查是否是已使用的笼位（黄色高亮）
       const isUsed = this.activecage && this.activecage.includes(cageNumber);
+      
+      // 如果是自持笼位模式
+      if (this.submitform.type === 'false') {
+        if (isReserved) {
+          // 如果是自持笼位，根据是否被选中显示不同颜色
+          return isSelected ? 'highlight-red' : 'highlight-blue';
+        }
+        // 非自持笼位显示默认样式
+        return 'default-cell';
+      }
       
       // 如果是自持笼位，返回蓝色高亮样式
       if (isReserved) {
@@ -1082,7 +1113,10 @@ export default {
     getReservedCageNumbers(id) {
       try {
         return new Promise((resolve, reject) => {
-          getCageNumber({ cage_rack_id: id })
+          getReservedCage2({ 
+            cage_rack_id: id,
+            user_id: store.getters.member.id 
+          })
             .then((res) => {
               this.reservedCageNumbers = res.data;
               resolve();

@@ -421,3 +421,12 @@ export function getFeedService(params) {
         params
     })
 }
+
+//查询所有的自持笼位
+export function getReservedCage2(params) {
+    return request({
+        url: '/animal/fac/cage/getReservedNumbersByUserId',
+        method: 'get',
+        params
+    })
+}

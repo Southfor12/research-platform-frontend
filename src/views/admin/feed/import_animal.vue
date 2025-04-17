@@ -163,6 +163,7 @@
       <el-result icon="success" title="动物导入成功" sub-title="动物信息已成功录入系统">
         <template slot="extra">
           <el-button type="primary" @click="handleFinish">完成</el-button>
+          <el-button type="success" @click="goToAnimalReceive" style="margin-left: 10px">前往动物接收</el-button>
         </template>
       </el-result>
     </div>
@@ -440,6 +441,14 @@ export default {
       // 直接跳转到指定页面
       this.$router.push({
         path: '/admin/feed'
+      })
+    },
+
+    goToAnimalReceive() {
+      // 跳转到动物接收模块
+      this.$router.push({
+        path: '/admin/feed/feed_apply',
+        query: { tab: 'receive' }
       })
     }
   }

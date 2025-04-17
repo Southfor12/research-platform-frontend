@@ -124,6 +124,7 @@ export default {
         { title: '待课题组审核', description: '等待课题组审核' },
         { title: '待饲养管理员审核', description: '等待饲养管理员审核' },
         { title: '等待导入动物', description: '审批已完成' },
+        { title: '已完成', description: '订单已完成' }
       ],
       feedCurrentStep: 0
     }
@@ -134,11 +135,18 @@ export default {
   methods: {
     async getFeedOrder() {
       try {
-        console.log('Fetching feed orders...');
+        console.log('开始获取饲养订单数据...');
         const res = await getAllFeedOrder_({});
-        console.log('Raw response:', res);
+        console.log('API返回的原始数据:', res);
+        
+        if (!res.data || !Array.isArray(res.data)) {
+          console.error('返回的数据格式不正确:', res);
+          return;
+        }
+        
         const promises = res.data.map(async (item) => {
           try {
+            console.log('处理订单:', item.id);
             const ress = await get_a_Feed({ id: item.care_id });
             const totalCost = item.price * item.count + item.extra;
 
@@ -151,20 +159,33 @@ export default {
               finalCost: totalCost,
             };
           } catch (err) {
-            console.error('Error fetching feed details:', err);
+            console.error('获取订单详情失败:', err);
             return item;
           }
         });
 
         const data = await Promise.all(promises);
-        console.log('Processed feed orders:', data);
-        this.feedOrder = data.map((item) => ({
-          ...item,
-          status_: item.status >= 0 ? this.feedSteps[item.status].title : '审核不通过',
-        }));
-        console.log('Final feedOrder:', this.feedOrder);
+        console.log('处理后的订单数据:', data);
+        
+        this.feedOrder = data.map((item) => {
+          let statusText = '未知状态';
+          if (item.status < 0) {
+            statusText = '审核不通过';
+          } else if (item.status >= 0 && item.status < this.feedSteps.length) {
+            statusText = this.feedSteps[item.status].title;
+          } else if (item.status >= this.feedSteps.length) {
+            statusText = '已完成';
+          }
+          
+          return {
+            ...item,
+            status_: statusText
+          };
+        });
+        
+        console.log('最终渲染的订单数据:', this.feedOrder);
       } catch (err) {
-        console.error('Error fetching feed orders:', err);
+        console.error('获取饲养订单失败:', err);
         this.feedOrder = [];
       }
     },
