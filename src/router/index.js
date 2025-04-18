@@ -31,6 +31,7 @@ import personal_college from './modules/colleges'
 import feed from './modules/feed'
 import personal_product from './modules/product'
 import order from './modules/order'
+import task from './modules/task'
 
 //index
 import index from './modules/index'
@@ -163,6 +164,7 @@ export const asyncRoutes = [{
   personal_product, //产品管理
   feed,
   order,
+  task,
 
 // 404 page must be placed at the end !!!
 {
