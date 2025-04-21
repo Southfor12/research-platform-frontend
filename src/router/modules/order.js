@@ -31,6 +31,26 @@ const order = {
             node: 'apparatus',
             activeClass: 'apparatus'
         }
+    },
+    {
+        path: 'item-purchase',
+        name: '物品订购',
+        component: () => import('@/views/admin/order/item-purchase/index'),
+        meta: {
+            title: '物品订购',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
+    },
+    {
+        path: 'tech-purchase',
+        name: '技术订购',
+        component: () => import('@/views/admin/order/tech-purchase/index'),
+        meta: {
+            title: '技术订购',
+            node: 'apparatus',
+            activeClass: 'apparatus'
+        }
     }]
 }
 

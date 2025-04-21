@@ -605,6 +605,8 @@ import {
   submitFeedAudit,
   getOrderListByOrgId,
   getFeedOrderListByOrgId,
+  getItemOrderListByOrgId,
+  getTechOrderListByOrgId,
 } from '@/api/order';
 import { get_a_Feed, get_a_Animal } from '@/api/product';
 import { get_a_Rack } from '@/api/colleges';
@@ -828,41 +830,73 @@ export default {
     },
 
     getItemOrder() {
-      getAllItemOrder().then((res) => {
-        this.itemOrder = res.data;
+      getItemOrderListByOrgId({ user_id: store.getters.member.id })
+        .then(res => {
+          console.log('Item API Response:', res); // 添加日志查看返回数据
+          if (res.status === 1) {
+            this.itemOrder = res.data.map(item => {
+              // 处理状态标识
+              let statusText = '';
+              if (item.status < 0) {
+                // 审核不通过
+                statusText = '课题组管理员审核不通过';
+              } else {
+                // 审核通过，使用正常状态
+                statusText = this.itemStutas[item.status];
+              }
 
-        if (store.getters.member.role_id === 13) {
-          this.itemOrder = this.itemOrder.filter((item) => item.status === 1);
-        } else if (store.getters.member.role_id === 14) {
-          this.itemOrder = this.itemOrder.filter((item) => item.status === 2);
-        } else if (store.getters.member.role_id === 12) {
-          this.itemOrder = this.itemOrder.filter((item) => item.status === 3);
-        } else this.itemOrder = [];
-        this.itemOrder.forEach((item) => {
-          item.totalCost = item.price * item.count + item.extra;
-          item.finalCost = item.totalCost;
-          item.status_ = this.itemStutas[item.status];
+              return {
+                ...item,
+                totalCost: item.price * item.count,
+                finalCost: (item.price * item.count) + (item.extra || 0),
+                status_: statusText,
+                // 添加审核状态判断
+                auditStatus: item.status !== 1
+              };
+            });
+            
+            console.log('Processed itemOrder:', this.itemOrder); // 添加日志查看处理后的数据
+          }
+        })
+        .catch(error => {
+          console.error('Error in getItemOrder:', error);
+          this.$message.error('获取物品订单数据失败');
         });
-      });
     },
 
     getTechOrder() {
-      getAllTechOrder().then((res) => {
-        this.techOrder = res.data;
+      getTechOrderListByOrgId({ user_id: store.getters.member.id })
+        .then(res => {
+          console.log('Tech API Response:', res); // 添加日志查看返回数据
+          if (res.status === 1) {
+            this.techOrder = res.data.map(item => {
+              // 处理状态标识
+              let statusText = '';
+              if (item.status < 0) {
+                // 审核不通过
+                statusText = '课题组管理员审核不通过';
+              } else {
+                // 审核通过，使用正常状态
+                statusText = this.techStutas[item.status];
+              }
 
-        if (store.getters.member.role_id === 13) {
-          this.techOrder = this.techOrder.filter((item) => item.status === 1);
-        } else if (store.getters.member.role_id === 15) {
-          this.techOrder = this.techOrder.filter((item) => item.status === 2);
-        } else if (store.getters.member.role_id === 12) {
-          this.techOrder = this.techOrder.filter((item) => item.status === 3);
-        } else this.techOrder = [];
-        this.techOrder.forEach((item) => {
-          item.totalCost = item.price * item.count;
-          item.finalCost = item.totalCost;
-          item.status_ = this.techStutas[item.status];
+              return {
+                ...item,
+                totalCost: item.price * item.count,
+                finalCost: (item.price * item.count) + (item.extra || 0),
+                status_: statusText,
+                // 添加审核状态判断
+                auditStatus: item.status !== 1
+              };
+            });
+            
+            console.log('Processed techOrder:', this.techOrder); // 添加日志查看处理后的数据
+          }
+        })
+        .catch(error => {
+          console.error('Error in getTechOrder:', error);
+          this.$message.error('获取技术订单数据失败');
         });
-      });
     },
 
     generateTableData(rows, cols) {
@@ -1090,18 +1124,34 @@ export default {
       }
     },
     handleTechAuditSubmit() {
-      if (store.getters.member.role_id === 12)
-        this.TechAuditForm.status = 5 * this.TechAuditForm.choice;
-      else if (store.getters.member.role_id === 13)
-        this.TechAuditForm.status = 2 * this.TechAuditForm.choice;
-      else if (store.getters.member.role_id === 14)
-        this.TechAuditForm.status = 3 * this.TechAuditForm.choice;
-      else if (store.getters.member.role_id === 15)
-        this.TechAuditForm.status = 3 * this.TechAuditForm.choice;
+      // 获取当前订单的状态
+      const currentOrder = this.techOrder.find(item => item.id === this.TechAuditForm.id);
+      if (!currentOrder) {
+        this.$message.error('未找到当前订单');
+        return;
+      }
 
+      // 根据审核结果更新状态
+      if (this.TechAuditForm.choice === '1') {
+        // 审核通过，状态值+1
+        this.TechAuditForm.status = currentOrder.status + 1;
+      } else if (this.TechAuditForm.choice === '-1') {
+        // 审核不通过，状态值+1取反
+        this.TechAuditForm.status = -(currentOrder.status + 1);
+      }
+
+      // 提交审核
       checkTechOrder(this.TechAuditForm).then((res) => {
-        this.AuditTechDialogVisible = false;
-        this.getTechOrder();
+        if (res.status === 1) {
+          this.$message.success('审核提交成功');
+          this.AuditTechDialogVisible = false;
+          this.getTechOrder(); // 重新获取订单列表
+        } else {
+          this.$message.error(res.msg || '审核提交失败');
+        }
+      }).catch(error => {
+        console.error('审核提交错误:', error);
+        this.$message.error('审核提交失败');
       });
     },
     handleAnimalAuditSubmit() {
@@ -1136,18 +1186,34 @@ export default {
       });
     },
     handleItemAuditSubmit() {
-      if (store.getters.member.role_id === 12)
-        this.ItemAuditForm.status = 5 * this.ItemAuditForm.choice;
-      else if (store.getters.member.role_id === 13)
-        this.ItemAuditForm.status = 2 * this.ItemAuditForm.choice;
-      else if (store.getters.member.role_id === 14)
-        this.ItemAuditForm.status = 3 * this.ItemAuditForm.choice;
-      else if (store.getters.member.role_id === 15)
-        this.ItemAuditForm.status = 3 * this.ItemAuditForm.choice;
+      // 获取当前订单的状态
+      const currentOrder = this.itemOrder.find(item => item.id === this.ItemAuditForm.id);
+      if (!currentOrder) {
+        this.$message.error('未找到当前订单');
+        return;
+      }
 
+      // 根据审核结果更新状态
+      if (this.ItemAuditForm.choice === '1') {
+        // 审核通过，状态值+1
+        this.ItemAuditForm.status = currentOrder.status + 1;
+      } else if (this.ItemAuditForm.choice === '-1') {
+        // 审核不通过，状态值+1取反
+        this.ItemAuditForm.status = -(currentOrder.status + 1);
+      }
+
+      // 提交审核
       checkItemOrder(this.ItemAuditForm).then((res) => {
-        this.AuditItemDialogVisible = false;
-        this.getItemOrder();
+        if (res.status === 1) {
+          this.$message.success('审核提交成功');
+          this.AuditItemDialogVisible = false;
+          this.getItemOrder(); // 重新获取订单列表
+        } else {
+          this.$message.error(res.msg || '审核提交失败');
+        }
+      }).catch(error => {
+        console.error('审核提交错误:', error);
+        this.$message.error('审核提交失败');
       });
     },
     handleFeedAuditSubmit() {
