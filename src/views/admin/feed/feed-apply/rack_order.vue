@@ -31,7 +31,7 @@
                     </el-table-column>
                     <el-table-column label="分配笼位" width="120" align="center">
                         <template #default="scope">
-                            <el-button type="success" size="small" @click="assignCage(scope.row)">分配笼位</el-button>
+                            <el-button type="success" size="small" @click="assignCage(scope.row)" :disabled="scope.row.status === 1">分配笼位</el-button>
                         </template>
                     </el-table-column>
 

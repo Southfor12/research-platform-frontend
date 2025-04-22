@@ -103,7 +103,7 @@ export function addAnimalDeathReason(params) {
 //删除动物处死原因
 export function delAnimalDeathReason(params) {
   return request({
-    url: '/animal/set/executionreasonn',
+    url: '/animal/set/executionreason',
     method: 'delete',
     params
   })
@@ -183,11 +183,11 @@ export function delAnimalStatus(params) {
 }
 
 //编辑动物状态
-export function editAnimalStatus(params) {
+export function editAnimalStatus(data) {
   return request({
     url: '/animal/set/animalstatus',
     method: 'put',
-    data: params
+    data: data
   })
 }
 
@@ -362,4 +362,12 @@ export function addFeedCase(params) {
   })
 }
 
+//删除动物疾病类型
+export function deleteAnimalDiseaseType(params) {
+  return request({
+    url: '/animal/set/animaldisease',
+    method: 'delete',
+    params
+  })
+}
 

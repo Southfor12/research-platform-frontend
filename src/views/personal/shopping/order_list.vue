@@ -417,16 +417,19 @@ export default {
       techStutas: [
         '待支付',
         '待课题组管理员审核',
-        '待饲养管理员审批',
+        '待饲养管理员审核',
         '待中心主任审批',
-        '',
-        '审批通过',
+        '审批通过'
       ],
 
       animalStutas_: ['课题组管理员审核不通过', '采购人审核不通过', '中心主任审批不通过'],
       itemStutas_: ['课题组管理员审核不通过', '采购人审核不通过', '中心主任审批不通过'],
       feedStutas_: ['课题组管理员审核不通过', '饲养管理员审批不通过'],
-      techStutas_: ['课题组管理员审核不通过', '饲养管理员审批不通过', '中心主任审批不通过'],
+      techStutas_: [
+        '课题组管理员审核不通过',
+        '饲养管理员审核不通过',
+        '中心主任审批不通过'
+      ],
 
       animalCurrentStep: 0, // 当前步骤索引
       itemCurrentStep: 0,
@@ -585,11 +588,19 @@ export default {
       getAllTechOrder({ user_id: store.getters.member.id }).then((res) => {
         this.techOrder = res.data;
         this.techOrder.forEach((item) => {
-          console.log(item.status);
+          console.log('技术订单状态:', item.status);
           item.totalCost = item.price * item.count;
           item.finalCost = item.totalCost;
-          if (item.status >= 0) item.status_ = this.techStutas[item.status];
-          else item.status_ = this.techStutas_[-item.status - 2];
+          
+          // 确保状态值在有效范围内
+          if (item.status >= 0 && item.status < this.techStutas.length) {
+            item.status_ = this.techStutas[item.status];
+          } else if (item.status < 0 && -item.status - 2 < this.techStutas_.length) {
+            item.status_ = this.techStutas_[-item.status - 2];
+          } else {
+            item.status_ = '未知状态';
+            console.warn('无效的状态值:', item.status);
+          }
         });
       });
     },

@@ -160,5 +160,12 @@ export default {
   },
 };
 </script>
+
+<style>
+.app-container {
+  padding: 20px;
+  padding-top: 40px;
+}
+</style>
             
             

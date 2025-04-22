@@ -336,3 +336,21 @@ export function getFeedOrderListByOrgId(params) {
     params
   });
 } 
+
+//根据课题组负责人id查询物品订单
+export function getItemOrderListByOrgId(params) {
+  return request({
+    url: '/animal/ord/item/getByGroupUser',
+    method: 'get',
+    params
+  });
+}
+
+//根据课题组负责人id查询技术订单
+export function getTechOrderListByOrgId(params) {
+  return request({
+    url: '/animal/ord/tech/getByGroupUser',
+    method: 'get',
+    params
+  });
+}

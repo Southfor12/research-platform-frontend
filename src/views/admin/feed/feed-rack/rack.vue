@@ -125,7 +125,7 @@
             <el-button type="primary" size="small" icon="el-icon-printer">打印标签</el-button>
             <el-button type="primary" size="small" icon="el-icon-user" @click="handleChangeContact">变更联系人</el-button>
             <el-button type="primary" size="small" icon="el-icon-warning" @click="handleAbnormal">饲养异常</el-button>
-            <el-button type="primary" size="small" icon="el-icon-setting">提交工单</el-button>
+            <el-button type="primary" size="small" icon="el-icon-setting" @click="handleSubmitWorkOrder">提交工单</el-button>
             <el-button type="primary" size="small" icon="el-icon-printer">重打标签</el-button>
           </div>
 
@@ -436,6 +436,58 @@
               <el-button type="primary" @click="confirmRackAuthorization">确 定</el-button>
             </div>
           </el-dialog>
+
+          <!-- 工单弹窗 -->
+          <el-dialog title="提交工单" :visible.sync="workOrderDialogVisible" width="500px" :close-on-click-modal="false"
+            :close-on-press-escape="false" :show-close="false">
+            <div class="work-order-content">
+              <el-form :model="workOrderForm" ref="workOrderForm" label-width="100px">
+                <el-form-item label="工单类型" prop="product">
+                  <el-select v-model="workOrderForm.product" placeholder="请选择工单类型" style="width: 100%">
+                    <el-option
+                      v-for="item in workOrderTypes"
+                      :key="item.id"
+                      :label="item.product"
+                      :value="item.product">
+                      <span style="float: left">{{ item.product }}</span>
+                      <span style="float: right; color: #8492a6; font-size: 13px">{{ item.price }}{{ item.unit }}</span>
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="数量" prop="count">
+                  <el-input-number v-model="workOrderForm.count" :min="1" :precision="0" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="开始时间" prop="startTime">
+                  <el-date-picker
+                    v-model="workOrderForm.startTime"
+                    type="datetime"
+                    placeholder="选择开始时间"
+                    style="width: 100%">
+                  </el-date-picker>
+                </el-form-item>
+                <el-form-item label="结束时间" prop="endTime">
+                  <el-date-picker
+                    v-model="workOrderForm.endTime"
+                    type="datetime"
+                    placeholder="选择结束时间"
+                    style="width: 100%">
+                  </el-date-picker>
+                </el-form-item>
+                <el-form-item label="描述" prop="description">
+                  <el-input
+                    type="textarea"
+                    :rows="3"
+                    placeholder="请输入工单描述"
+                    v-model="workOrderForm.description">
+                  </el-input>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="workOrderDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="submitWorkOrder">提 交</el-button>
+            </div>
+          </el-dialog>
         </div>
       </el-main>
     </el-container>
@@ -457,11 +509,12 @@ import {
   getCageId,
   cleanRack,
   updateCageContact,
+  updateCageBoxContact, 
   getUserById,
   allUsers,
   moveCage,
   getCageBoxId,
-  getOrderInfo,
+  getOrderInfo, 
   importNewCage,
   updateAnimalStatus,
   updateOrderInfo,
@@ -473,6 +526,8 @@ import {
   cancelAuthorization,
   getReservedCage,
   cancelRackAuthorization,
+  getWorkServiceOrder,
+  submitWorkServiceOrder
 } from '@/api/ani_manage';
 import { getAnimalStatus } from '@/api/ani_setting';
 import { feedAbnormal } from '@/api/ani_manage';
@@ -627,6 +682,17 @@ export default {
       rackAuthDialogVisible: false, // 笼架授权弹窗显示状态
       selectedRackAuthUserId: null, // 选中的笼架授权用户ID
       reservedCages: [], // 存储已授权的笼位信息
+
+      // 工单相关数据
+      workOrderDialogVisible: false, // 工单弹窗显示状态
+      workOrderTypes: [], // 工单类型列表
+      workOrderForm: {
+        product: '', // 工单类型
+        count: 1, // 数量
+        startTime: '', // 开始时间
+        endTime: '', // 结束时间
+        description: '' // 描述
+      },
     };
   },
   created() {
@@ -1212,7 +1278,7 @@ export default {
         }
 
         // 使用笼盒ID调用更新联系人接口
-        await updateCageContact({
+        await updateCageBoxContact({
           cage_box_id: cageBoxRes.data.id,
           user_id: this.selectedContactId,
         });
@@ -2213,6 +2279,154 @@ export default {
         this.$message.error('取消所有授权失败');
       }
     },
+
+    // 处理提交工单按钮点击
+    async handleSubmitWorkOrder() {
+      console.log('点击了提交工单按钮');
+      if (!this.currentSelectedCage.isSelected) {
+        console.log('未选择笼子');
+        this.$message.warning('请先选择笼子');
+        return;
+      }
+
+      if (!this.currentCageId) {
+        console.log('未获取到笼子ID');
+        this.$message.warning('未获取到笼子ID');
+        return;
+      }
+
+      try {
+        console.log('开始获取工单类型列表');
+        // 获取工单类型列表
+        const response = await getWorkServiceOrder();
+        console.log('获取工单类型列表响应:', response);
+        if (response.status === 1 && response.data) {
+          this.workOrderTypes = response.data;
+          console.log('设置工单类型列表:', this.workOrderTypes);
+          
+          // 重置表单
+          this.workOrderForm = {
+            product: '',
+            count: 1,
+            startTime: '',
+            endTime: '',
+            description: ''
+          };
+          
+          // 显示弹窗
+          console.log('准备显示弹窗');
+          this.workOrderDialogVisible = true;
+          console.log('弹窗状态:', this.workOrderDialogVisible);
+        } else {
+          console.log('获取工单类型列表失败');
+          this.$message.error('获取工单类型列表失败');
+        }
+      } catch (error) {
+        console.error('获取工单类型列表失败:', error);
+        this.$message.error('获取工单类型列表失败');
+      }
+    },
+
+    // 提交工单
+    async submitWorkOrder() {
+      // 表单验证
+      if (!this.workOrderForm.product) {
+        this.$message.warning('请选择工单类型');
+        return;
+      }
+      if (!this.workOrderForm.startTime) {
+        this.$message.warning('请选择开始时间');
+        return;
+      }
+      if (!this.workOrderForm.endTime) {
+        this.$message.warning('请选择结束时间');
+        return;
+      }
+
+      try {
+        console.log('开始提交工单，当前表单数据:', this.workOrderForm);
+        console.log('当前笼子ID:', this.currentCageId);
+
+        // 获取笼盒信息和订单信息以获取使用者ID
+        const cageBoxRes = await getCageBoxId({
+          cage_id: this.currentCageId,
+        });
+
+        if (!cageBoxRes.data || !cageBoxRes.data.id) {
+          this.$message.warning('未找到对应的笼盒信息');
+          return;
+        }
+
+        // 获取订单信息以获取使用者ID
+        const orderRes = await getOrderInfo({
+          cage_id: this.currentCageId,
+        });
+
+        if (!orderRes.data || !orderRes.data.user_id) {
+          this.$message.warning('未找到笼子使用者信息');
+          return;
+        }
+
+        const userId = orderRes.data.user_id;
+        console.log('获取到的使用者ID:', userId);
+        
+        // 格式化时间
+        const formatDate = (date) => {
+          const d = new Date(date);
+          const pad = (num) => (num < 10 ? `0${num}` : num);
+          
+          const year = d.getFullYear();
+          const month = pad(d.getMonth() + 1);
+          const day = pad(d.getDate());
+          const hours = pad(d.getHours());
+          const minutes = pad(d.getMinutes());
+          const seconds = pad(d.getSeconds());
+          
+          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        };
+
+        const startTime = this.workOrderForm.startTime ? formatDate(this.workOrderForm.startTime) : '';
+        const endTime = this.workOrderForm.endTime ? formatDate(this.workOrderForm.endTime) : '';
+
+        console.log('格式化后的时间:', { startTime, endTime });
+
+        // 构建提交数据
+        const submitData = {
+          user_id: userId, // 使用笼子使用者的ID
+          start_time: startTime,
+          end_time: endTime,
+          cage_id: this.currentCageId,
+          count: this.workOrderForm.count,
+          product: this.workOrderForm.product
+        };
+
+        console.log('准备提交的数据:', submitData);
+
+        // 调用提交工单接口
+        const response = await submitWorkServiceOrder(submitData);
+        console.log('提交工单响应:', response);
+
+        if (response.status === 1) {
+          this.$message.success('提交工单成功');
+          this.workOrderDialogVisible = false;
+          
+          // 重置表单
+          this.workOrderForm = {
+            product: '',
+            count: 1,
+            startTime: '',
+            endTime: '',
+            description: ''
+          };
+        } else {
+          console.error('提交工单失败，错误信息:', response.msg);
+          this.$message.error(response.msg || '提交工单失败');
+        }
+      } catch (error) {
+        console.error('提交工单失败，详细错误:', error);
+        this.$message.error('提交工单失败: ' + (error.message || '未知错误'));
+      }
+    },
   },
   watch: {
     // 监听笼架选择变化，重置当前选中状态
@@ -2975,5 +3189,30 @@ export default {
 
 .el-table td {
   padding: 8px 0;
+}
+
+/* 工单弹窗样式 */
+.work-order-content {
+  padding: 20px;
+}
+
+.work-order-content .el-form-item {
+  margin-bottom: 20px;
+}
+
+.work-order-content .el-select {
+  width: 100%;
+}
+
+.work-order-content .el-date-picker {
+  width: 100%;
+}
+
+.work-order-content .el-textarea {
+  width: 100%;
+}
+
+.work-order-content .el-input-number {
+  width: 100%;
 }
 </style>

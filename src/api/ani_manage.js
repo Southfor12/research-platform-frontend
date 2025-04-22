@@ -51,6 +51,15 @@ export function updateCageContact(params) {
     })
 }
 
+//更改笼盒联系人
+export function updateCageBoxContact(params) {
+    return request({
+        url: '/animal/fac/cagebox/changeuser',
+        method: 'put',
+        params
+    })
+}
+
 //查询所有用户
 export function allUsers() {
     return request({
@@ -428,5 +437,23 @@ export function getReservedCage2(params) {
         url: '/animal/fac/cage/getReservedNumbersByUserId',
         method: 'get',
         params
+    })
+}
+
+//查询所有工单
+export function getWorkServiceOrder(params) {
+    return request({
+        url: '/animal/set/workservice/all',
+        method: 'get',
+        params
+    })
+}
+
+//提交工单
+export function submitWorkServiceOrder(data) {
+    return request({
+        url: '/animal/fac/cage/insertworkorder',
+        method: 'post',
+        data
     })
 }
