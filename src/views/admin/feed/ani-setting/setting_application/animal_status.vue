@@ -33,7 +33,7 @@
           <el-input v-model="form.name" placeholder="请输入动物状态名称"></el-input>
         </el-form-item>
         <el-form-item label="动物状态标识" prop="code">
-          <el-input v-model="form.code" placeholder="请输入动物状态标识" :disabled="dialogType === 'edit'"></el-input>
+          <el-input v-model="form.code" placeholder="请输入动物状态标识"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -203,7 +203,7 @@ export default {
           }
         } else {
           //空关键字时加载全部数据
-          await this.getAnimalStatus()
+          await this.loadData()
         }
       }
       catch (error) {

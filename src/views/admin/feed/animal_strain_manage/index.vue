@@ -15,7 +15,11 @@
       <el-table-column prop="strain_name" label="品系全称" width="180" align="center" />
       <el-table-column prop="strain_abbreviation" label="品系简称" width="120" align="center" />
       <el-table-column prop="count" label="活体数量" width="120" align="center" />
-      <el-table-column prop="animal_type" label="动物类型" width="150" align="center" />
+      <el-table-column prop="animal_type_id" label="动物类型" width="150" align="center">
+        <template #default="{ row }">
+          {{ getAnimalTypeName(row.animal_type_id) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="sperm_count" label="精子数量" width="120" align="center" />
       <el-table-column prop="create_by" label="创建人" width="120" align="center" />
       <el-table-column label="操作" width="180" fixed="right" align="center">
@@ -40,8 +44,10 @@
         <el-form-item label="品系简称" prop="strain_abbreviation">
           <el-input v-model="form.strain_abbreviation"></el-input>
         </el-form-item>
-        <el-form-item label="动物类型" prop="animal_type">
-          <el-input v-model="form.animal_type"></el-input>
+        <el-form-item label="动物类型" prop="animal_type_id">
+          <el-select v-model="form.animal_type_id" @change="handleAnimalTypeChange" placeholder="请选择动物类型">
+            <el-option v-for="item in animalTypeOptions" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="活体数量" prop="count">
           <el-input-number v-model="form.count" :min="0"></el-input-number>
@@ -64,7 +70,8 @@ import {
   addAnimalStrain,
   editAnimalStrain,
   delAnimalStrain,
-  getAnimalTypeByStrainId
+  getAnimalTypeByStrainId,
+  getAnimalType
 } from '@/api/ani_setting'
 
 export default {
@@ -76,6 +83,7 @@ export default {
       submitting: false,
       searchKey: '',
       tableData: [],
+      animalTypeOptions: [], // 动物类型选项列表
       pagination: {
         current: 1,
         size: 10,
@@ -85,21 +93,34 @@ export default {
         id: null,
         strain_name: '',
         strain_abbreviation: '',
-        animal_type: '',
+        animal_type_id: '', // 修改字段名为animal_type_id
         count: 0,
         sperm_count: 0
       },
       rules: {
         strain_name: [{ required: true, message: '请输入品系全称', trigger: 'blur' }],
         strain_abbreviation: [{ required: true, message: '请输入品系简称', trigger: 'blur' }],
-        animal_type: [{ required: true, message: '请输入动物类型', trigger: 'blur' }]
+        animal_type_id: [{ required: true, message: '请选择动物类型', trigger: 'change' }] // 修改字段名为animal_type_id
       }
     }
   },
   created() {
     this.loadData()
+    this.loadAnimalTypes()
   },
   methods: {
+    // 加载动物类型数据
+    async loadAnimalTypes() {
+      try {
+        const res = await getAnimalType()
+        if (res.status === 1) {
+          this.animalTypeOptions = res.data
+        }
+      } catch (error) {
+        console.error('加载动物类型失败:', error)
+        this.$message.error('加载动物类型失败')
+      }
+    },
     async loadData() {
       try {
         this.loading = true
@@ -122,13 +143,13 @@ export default {
                 const typeRes = await getAnimalTypeByStrainId({ id: item.id });
                 return {
                   ...item,
-                  animal_type: typeRes.msg,// 使用接口返回的msg作为动物类型
+                  animal_type_id: typeRes.msg,// 使用接口返回的msg作为动物类型
                 };
               } catch (error) {
                 console.error('获取动物类型失败:', error);
                 return {
                   ...item,
-                  animal_type: '未知' // 错误时显示默认值
+                  animal_type_id: '未知' // 错误时显示默认值
                 };
               }
             })
@@ -151,7 +172,7 @@ export default {
         id: null,
         strain_name: '',
         strain_abbreviation: '',
-        animal_type: '',
+        animal_type_id: '', // 修改为animal_type_id
         count: 0,
         sperm_count: 0
       }
@@ -160,7 +181,10 @@ export default {
 
     handleEdit(row) {
       this.dialogType = 'edit'
-      this.form = { ...row }
+      this.form = { 
+        ...row,
+        animal_type_id: row.animal_type_id // 修改为animal_type_id
+      }
       this.dialogVisible = true
     },
 
@@ -208,6 +232,16 @@ export default {
     handlePageChange(page) {
       this.pagination.current = page
       this.loadData()
+    },
+
+    handleAnimalTypeChange(value) {
+      // 处理动物类型选择的逻辑
+    },
+
+    // 获取动物类型名称
+    getAnimalTypeName(id) {
+      const type = this.animalTypeOptions.find(item => item.id === id)
+      return type ? type.name : '未知'
     }
   }
 }

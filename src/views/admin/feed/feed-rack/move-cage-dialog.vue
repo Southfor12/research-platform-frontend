@@ -149,7 +149,7 @@ import {
   moveCage,
   getCageBoxId,
   getOrderInfo,
-  moveAnimal
+  // moveAnimal
 } from '@/api/ani_manage';
 
 export default {
@@ -159,10 +159,10 @@ export default {
       type: Boolean,
       default: false
     },
-    selectedAnimal: {
-      type: Object,
-      default: () => ({})
-    },
+    // selectedAnimal: {
+    //   type: Object,
+    //   default: () => ({})
+    // },
     sourceCageBoxInfo: {
       type: Object,
       default: () => ({})
@@ -590,27 +590,35 @@ export default {
 
     // 确认移动
     async confirmMove() {
+      console.log('confirmMove 方法被调用');
+      console.log('targetCage:', this.targetCage);
+      console.log('sourceCageBoxInfo:', this.sourceCageBoxInfo);
+      
       if (!this.targetCage.id) {
         this.$message.warning('请选择目标笼盒')
         return
       }
 
       try {
-        if (this.selectedAnimal) {
-          // 移动动物
-          await moveAnimal({
-            animal_id: this.selectedAnimal.animalId,
-            new_cage_id: this.targetCage.id
-          })
-        } else {
+        // if (this.selectedAnimal) {
+        //   // 移动动物
+        //   await moveAnimal({
+        //     animal_id: this.selectedAnimal.animalId,
+        //     new_cage_id: this.targetCage.id
+        //   })
+        // } else {
           // 移动笼盒
+          console.log('准备发送移动笼盒请求:', {
+            cage_box_id: this.sourceCageBoxInfo.id,
+            newcage_id: this.targetCage.id
+          });
           await moveCage({
             cage_box_id: this.sourceCageBoxInfo.id,
             newcage_id: this.targetCage.id
           })
-        }
+        // }
 
-        this.$message.success(this.selectedAnimal ? '移动动物成功' : '移动笼盒成功')
+        this.$message.success('移动笼盒成功')
         this.$emit('move-success')
         this.handleClose()
       } catch (error) {

@@ -135,7 +135,7 @@ export default {
 
         const params = {
           name: this.form.name,
-          code: this.form.code.toLowerCase(),
+          code: this.form.code,
           default_capacity: this.form.default_capacity
         }
 
@@ -194,21 +194,23 @@ export default {
       }))
     },
     async handleDelete(row) {
-      this.$confirm('确定要删除该条目吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        delAnimalType({
-          id: row.id
-        }).then((res) => {
-          if (res.status == 1) {
-            this.$message.success('删除成功');
-            this.loadAnimalData();
-          }
-        });
-        this.getAnimalType()
-      }).catch(() => { })
+      try {
+        await this.$confirm('确定要删除该条目吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        
+        const res = await delAnimalType({ id: row.id })
+        if (res.status === 1) {
+          this.$message.success('删除成功')
+          await this.getAnimalType() // 删除成功后刷新数据
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('删除失败')
+        }
+      }
     },
     // 修改后的编辑方法
     handleEdit(row) {

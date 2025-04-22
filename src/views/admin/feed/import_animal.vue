@@ -222,6 +222,7 @@
 import { get_a_FeedOrder } from '@/api/order'
 import { getAnimalType } from '@/api/ani_setting'
 import { animalImport } from '@/api/ani_manage'
+import { checkFeedOrder } from '@/api/order'
 
 export default {
   data() {
@@ -270,7 +271,13 @@ export default {
     },
     async loadOrderData() {
       try {
-        const res = await get_a_FeedOrder({ id: this.$route.query.id })
+        const orderId = this.$route.query.id;
+        if (!orderId) {
+          console.log('未提供订单ID，跳过数据加载');
+          return;
+        }
+
+        const res = await get_a_FeedOrder({ id: orderId })
         console.log('获得到的响应的订单数据:', res)
 
         // 设置动物类型、品系和供应商的默认值
@@ -299,47 +306,56 @@ export default {
         };
       } catch (error) {
         console.error('数据加载失败:', error);
+        // 不显示错误提示，静默处理
       }
     },
     goBack() {
       this.$router.go(-1)
     },
     async loadData() {
-      // 获取订单ID
-      const orderId = this.$route.query.id;
-      console.log('接收到的订单ID:', orderId)
-      if (!orderId) return
-      // 根据id加载对应的订单数据
-      const res = await get_a_FeedOrder({ id: orderId })
-      console.log('获得到的响应的订单数据:', res)
-      if (res.status === 1) {
-        const orderData = res.data
-        this.currentOrder = orderData
-        this.form.orderId = orderData.id
-        this.form.startTime = orderData.start_time
-        this.form.animalType = orderData.animal_type
-        // 设置笼位ID
-        if (orderData.cage_id && orderData.cage_id.length > 0) {
-          this.currentOrder.cage_id = orderData.cage_id[0]
+      try {
+        // 获取订单ID
+        const orderId = this.$route.query.id;
+        if (!orderId) {
+          console.log('未提供订单ID，跳过数据加载');
+          return;
         }
-        // 映射旧数据到新结构
-        this.form.animals = orderData.animals.map((animal, index) => ({
-          strain: animal.name || '',
-          gender: animal.gender,
-          position: '',
-          birthDate: animal.create_time.split(' ')[0],
-          returnType: '',
-          serialNumber: animal.serialNumber || `ANIMAL-${orderData.id}-${index.toString().padStart(3, '0')}`,
-          generation: '',
-          color: '',
-          description: animal.description || ''
-        }));
-      }
 
-      // 加载动物类型
-      const typeRes = await getAnimalType()
-      if (typeRes.status === 1) {
-        this.animalTypes = typeRes.data
+        // 根据id加载对应的订单数据
+        const res = await get_a_FeedOrder({ id: orderId })
+        console.log('获得到的响应的订单数据:', res)
+        if (res.status === 1) {
+          const orderData = res.data
+          this.currentOrder = orderData
+          this.form.orderId = orderData.id
+          this.form.startTime = orderData.start_time
+          this.form.animalType = orderData.animal_type
+          // 设置笼位ID
+          if (orderData.cage_id && orderData.cage_id.length > 0) {
+            this.currentOrder.cage_id = orderData.cage_id[0]
+          }
+          // 映射旧数据到新结构
+          this.form.animals = orderData.animals.map((animal, index) => ({
+            strain: animal.name || '',
+            gender: animal.gender,
+            position: '',
+            birthDate: animal.create_time.split(' ')[0],
+            returnType: '',
+            serialNumber: animal.serialNumber || `ANIMAL-${orderData.id}-${index.toString().padStart(3, '0')}`,
+            generation: '',
+            color: '',
+            description: animal.description || ''
+          }));
+        }
+
+        // 加载动物类型
+        const typeRes = await getAnimalType()
+        if (typeRes.status === 1) {
+          this.animalTypes = typeRes.data
+        }
+      } catch (error) {
+        console.error('数据加载失败:', error);
+        // 不显示错误提示，静默处理
       }
     },
 
@@ -438,10 +454,30 @@ export default {
     },
 
     handleFinish() {
-      // 直接跳转到指定页面
-      this.$router.push({
-        path: '/admin/feed'
-      })
+      // 获取订单ID
+      const orderId = this.$route.query.id;
+      if (!orderId) {
+        this.$message.error('未找到订单ID');
+        return;
+      }
+
+      // 调用更新订单状态的API
+      checkFeedOrder({
+        id: orderId,
+        status: 4, // 设置为"已经导入"状态
+        info: '动物导入完成'
+      }).then(res => {
+        if (res.status === 1) {
+          this.$message.success('订单状态更新成功');
+          // 跳转到饲养繁育的饲养订单页面
+          this.$router.push('/admin/feed/feed_apply');
+        } else {
+          this.$message.error(res.msg || '状态更新失败');
+        }
+      }).catch(error => {
+        console.error('状态更新失败:', error);
+        this.$message.error('状态更新失败，请重试');
+      });
     },
 
     goToAnimalReceive() {

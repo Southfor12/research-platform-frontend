@@ -41,7 +41,7 @@
           <el-input v-model="form.dosage" placeholder="请输入剂量"></el-input>
         </el-form-item>
         <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" placeholder="请输入描述"></el-input>
+          <el-input v-model="form.description" placeholder="请输入描述（选填）"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -88,9 +88,7 @@ export default {
         dosage: [
           { required: true, message: '请输入剂量', trigger: 'blur' }
         ],
-        description: [
-          { required: true, message: '请输入描述', trigger: 'blur' }
-        ]
+        description: []
       }
     }
   },
@@ -133,7 +131,9 @@ export default {
       this.form = {
         id: row.id,
         name: row.name,
-        code: row.code
+        use_method: row.use_method,
+        dosage: row.dosage,
+        description: row.description
       }
       this.dialogVisible = true
     },
@@ -221,7 +221,7 @@ export default {
           }
         } else {
           //空关键字时加载全部数据
-          await this.getTreatmentPlan()
+          await this.loadData()
         }
       }
       catch (error) {
