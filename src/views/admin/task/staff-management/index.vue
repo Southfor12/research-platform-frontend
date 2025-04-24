@@ -9,10 +9,6 @@
             class="filter-item"
             @keyup.enter.native="handleFilter"
           />
-          <el-select v-model="listQuery.staff_type" placeholder="人员类型" clearable class="filter-item">
-            <el-option label="组长" value="组长" />
-            <el-option label="组员" value="组员" />
-          </el-select>
           <el-select v-model="listQuery.work_group_id" placeholder="所属工作组" clearable class="filter-item">
             <el-option 
               v-for="group in workGroups"
@@ -165,6 +161,7 @@
 <script>
 import Pagination from '@/components/Pagination'
 import { getStaffList, getWorkGroupList, addStaff, deleteStaff, addWorkGroup, deleteWorkGroup, getWorkGroupByName } from '@/api/task_work'
+import { getStaffByPage, getStaffByWorkGroupName } from '@/api/ani_task'
 
 export default {
   name: 'StaffManagement',
@@ -181,7 +178,6 @@ export default {
         page: 1,
         limit: 20,
         keyword: undefined,
-        staff_type: undefined,
         work_group_id: undefined
       },
       // 工作组列表相关
@@ -251,11 +247,14 @@ export default {
         const response = await getStaffList()
         if (response.status === 1) {
           this.staffList = response.data
+          this.total = response.data.length
           // 提取工作组信息用于筛选
           this.workGroups = [...new Set(this.staffList.map(item => ({
             id: item.work_group_id,
             name: item.work_group_name
           })))]
+        } else {
+          this.$message.error(response.message || '获取人员列表失败')
         }
       } catch (error) {
         console.error('获取人员列表失败:', error)
@@ -264,8 +263,47 @@ export default {
       this.listLoading = false
     },
     handleFilter() {
-      this.listQuery.page = 1
-      this.getStaffList()
+      this.listLoading = true
+      try {
+        getStaffByPage({
+          name: this.listQuery.keyword,
+          work_group_name: this.listQuery.work_group_id ? (this.workGroups.find(g => g.id === this.listQuery.work_group_id) || {}).name : '',
+          pageNo: this.listQuery.page,
+          pageSize: this.listQuery.limit
+        }).then(response => {
+          if (response.status === 1) {
+            // 根据后端返回的数据结构处理
+            if (response.data && response.data.records) {
+              this.staffList = response.data.records
+              this.total = response.data.total
+              if (response.data.total === 0) {
+                this.$message.info('没有找到匹配的数据')
+              }
+            } else {
+              this.staffList = []
+              this.total = 0
+              this.$message.info('没有找到匹配的数据')
+            }
+          } else {
+            this.staffList = []
+            this.total = 0
+            this.$message.error(response.message || '搜索失败')
+          }
+          this.listLoading = false
+        }).catch(error => {
+          console.error('搜索失败:', error)
+          this.staffList = []
+          this.total = 0
+          this.$message.error('搜索失败')
+          this.listLoading = false
+        })
+      } catch (error) {
+        console.error('搜索失败:', error)
+        this.staffList = []
+        this.total = 0
+        this.$message.error('搜索失败')
+        this.listLoading = false
+      }
     },
     handleCreate() {
       this.dialogVisible = true
@@ -305,18 +343,27 @@ export default {
       try {
         let response
         if (this.workGroupQuery.keyword) {
-          response = await getWorkGroupByName({
+          response = await getStaffByWorkGroupName({
             name: this.workGroupQuery.keyword,
             pageNo: this.workGroupQuery.pageNo,
             pageSize: this.workGroupQuery.pageSize
           })
           if (response.status === 1) {
-            this.workGroupList = response.data || []
-            this.workGroupTotal = response.total || 0
+            if (response.data && response.data.records) {
+              this.workGroupList = response.data.records
+              this.workGroupTotal = response.data.total
+              if (response.data.total === 0) {
+                this.$message.info('没有找到匹配的工作组')
+              }
+            } else {
+              this.workGroupList = []
+              this.workGroupTotal = 0
+              this.$message.info('没有找到匹配的工作组')
+            }
           } else {
-            this.$message.error(response.message || '搜索工作组失败')
             this.workGroupList = []
             this.workGroupTotal = 0
+            this.$message.error(response.message || '搜索工作组失败')
           }
         } else {
           response = await getWorkGroupList()
